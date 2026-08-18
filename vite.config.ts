@@ -2,21 +2,16 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
-import path from 'path'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'node:path'
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     react(),
     electron([
       {
-        entry: [
-          'electron/main.ts',
-          'electron/database.ts',
-          'electron/ipcHandlers.ts',
-          'electron/mergeService.ts',
-          'electron/systemServices.ts',
-          'electron/pdfTemplate.ts'
-        ],
+        entry: 'src/main/index.ts',
         onstart(args) {
           args.startup()
         },
@@ -26,22 +21,17 @@ export default defineConfig({
             sourcemap: true,
             minify: false,
             rollupOptions: {
-              external: [
-                'electron',
-                'better-sqlite3',
-                'sqlite3',
-                'fs-extra'
-              ],
+              external: ['electron', 'better-sqlite3', 'fs-extra'],
               output: {
                 format: 'cjs',
-                entryFileNames: '[name].js'
-              }
+                entryFileNames: 'main.js',
+              },
             },
           },
         },
       },
       {
-        entry: 'electron/preload.ts',
+        entry: 'src/preload/index.ts',
         onstart(args) {
           args.reload()
         },
@@ -54,12 +44,12 @@ export default defineConfig({
               external: ['electron'],
               output: {
                 format: 'cjs',
-                entryFileNames: '[name].js'
-              }
+                entryFileNames: 'preload.js',
+              },
             },
           },
         },
-      }
+      },
     ]),
     renderer(),
   ],

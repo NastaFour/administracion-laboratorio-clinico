@@ -6,7 +6,30 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    'dist-electron',
+    'release',
+    'node_modules',
+    'electron/**/*',
+    'src/App.tsx',
+    'src/main.tsx',
+    'src/components/**/*',
+    'src/hooks/**/*',
+    'src/vite-env.d.ts',
+    'update_pdf_template.js',
+    'inject_images.cjs',
+    '.atl/**/*',
+    '.claude/**/*',
+    '.codegraph/**/*',
+    '.codeium/**/*',
+    '.copilot/**/*',
+    '.cursor/**/*',
+    '.deepseek/**/*',
+    '.gemini/**/*',
+    '.kiro/**/*',
+    '.opencode/**/*',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

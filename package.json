@@ -2,14 +2,18 @@
   "name": "aplicacion-para-laboratorio-clinico",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b --noEmit && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/vitest/vitest.mjs run",
+    "test:watch": "cross-env ELECTRON_RUN_AS_NODE=1 electron node_modules/vitest/vitest.mjs",
     "package": "npm run build && electron-builder build --win --dir",
-    "dist": "npm run build && electron-builder build --win"
+    "dist": "npm run build && electron-builder build --win",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "build": {
     "appId": "com.labcore.app",
@@ -37,6 +41,7 @@
   },
   "dependencies": {
     "@types/fs-extra": "^11.0.4",
+    "bcryptjs": "^3.0.2",
     "better-sqlite3": "^12.5.0",
     "clsx": "^2.1.1",
     "electron-is-dev": "^3.0.1",
@@ -45,29 +50,37 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.6.0",
-    "sqlite3": "^5.1.7",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.2",
     "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "^4.1.14",
+    "@testing-library/jest-dom": "^6.6.8",
+    "@testing-library/react": "^16.3.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
     "electron": "^33.0.0",
     "electron-builder": "^26.0.12",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.1.14",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
     "vite-plugin-electron": "^0.29.0",
     "vite-plugin-electron-renderer": "^0.14.6",
+    "vitest": "^3.2.5",
     "wait-on": "^9.0.3"
   }
 }
