@@ -1,0 +1,118 @@
+import { z } from 'zod'
+import { idSchema, isoDateOnlySchema, positiveMoneySchema } from './primitives'
+import { PAYMENT_METHOD } from './constants'
+import { envelopeSchema } from './errors'
+
+export const paymentMethodSchema = z.enum([
+  PAYMENT_METHOD.PAGO_MOVIL,
+  PAYMENT_METHOD.TRANSFERENCIA,
+  PAYMENT_METHOD.PUNTO,
+  PAYMENT_METHOD.EFECTIVO,
+  PAYMENT_METHOD.MIXTO,
+])
+
+export const paymentSchema = z.object({
+  id: idSchema,
+  orden_id: idSchema.nullable(),
+  cuenta_id: idSchema.nullable(),
+  metodo: paymentMethodSchema,
+  monto_bs: positiveMoneySchema,
+  monto_usd: positiveMoneySchema,
+  tasa_bcv: positiveMoneySchema,
+  referencia: z.string().nullable(),
+  fecha: isoDateOnlySchema,
+  usuario_id: idSchema,
+  anulado: z.boolean(),
+  anulado_por: idSchema.nullable(),
+  anulado_en: z.string().datetime().nullable(),
+})
+
+export type Payment = z.infer<typeof paymentSchema>
+
+export const recordPaymentRequestSchema = z.object({
+  orden_id: idSchema.nullable(),
+  cuenta_id: idSchema.nullable(),
+  metodo: paymentMethodSchema,
+  monto_bs: positiveMoneySchema.default(0),
+  monto_usd: positiveMoneySchema.default(0),
+  tasa_bcv: positiveMoneySchema,
+  referencia: z.string().nullable().default(null),
+  fecha: isoDateOnlySchema,
+})
+
+export type RecordPaymentRequest = z.infer<typeof recordPaymentRequestSchema>
+
+export const cancelPaymentRequestSchema = z.object({
+  id: idSchema,
+  motivo: z.string().min(1),
+})
+
+export type CancelPaymentRequest = z.infer<typeof cancelPaymentRequestSchema>
+
+export const balanceSchema = z.object({
+  orden_id: idSchema,
+  total_bs: positiveMoneySchema,
+  pagado_bs: positiveMoneySchema,
+  saldo_bs: positiveMoneySchema,
+  total_usd: positiveMoneySchema,
+  pagado_usd: positiveMoneySchema,
+  saldo_usd: positiveMoneySchema,
+})
+
+export type Balance = z.infer<typeof balanceSchema>
+
+export const cierreSchema = z.object({
+  fecha: isoDateOnlySchema,
+  total_bs: positiveMoneySchema,
+  total_usd: positiveMoneySchema,
+  tasa_bcv: positiveMoneySchema,
+  usuario_id: idSchema,
+  creado_en: z.string().datetime(),
+  detalle_por_metodo: z.record(z.string(), z.object({ bs: positiveMoneySchema, usd: positiveMoneySchema })),
+})
+
+export type Cierre = z.infer<typeof cierreSchema>
+
+export const bcvRateSchema = z.object({
+  tasa: positiveMoneySchema,
+  actualizado_en: z.string().datetime(),
+})
+
+export type BcvRate = z.infer<typeof bcvRateSchema>
+
+export const paymentsChannels = {
+  'payments:record': {
+    request: recordPaymentRequestSchema,
+    response: envelopeSchema(paymentSchema),
+  },
+  'payments:cancel': {
+    request: cancelPaymentRequestSchema,
+    response: envelopeSchema(paymentSchema),
+  },
+  'payments:listForOrder': {
+    request: z.object({ ordenId: idSchema }),
+    response: envelopeSchema(z.array(paymentSchema)),
+  },
+  'payments:balance': {
+    request: z.object({ ordenId: idSchema }),
+    response: envelopeSchema(balanceSchema),
+  },
+  'cierre:run': {
+    request: z.object({ fecha: isoDateOnlySchema }),
+    response: envelopeSchema(cierreSchema),
+  },
+  'cierre:print': {
+    request: z.object({ fecha: isoDateOnlySchema }),
+    response: envelopeSchema(z.string()),
+  },
+  'config:getBcvRate': {
+    request: z.void(),
+    response: envelopeSchema(bcvRateSchema.nullable()),
+  },
+  'config:setBcvRate': {
+    request: z.object({ tasa: positiveMoneySchema }),
+    response: envelopeSchema(bcvRateSchema),
+  },
+} as const
+
+export type PaymentsChannels = typeof paymentsChannels
