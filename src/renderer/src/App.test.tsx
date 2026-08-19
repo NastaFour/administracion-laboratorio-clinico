@@ -1,12 +1,70 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import App from './App'
 
+const mockMe = vi.fn()
+
+beforeEach(() => {
+  mockMe.mockReset()
+  window.api = {
+    auth: {
+      login: vi.fn(),
+      logout: vi.fn(),
+      me: mockMe,
+      changePassword: vi.fn(),
+    },
+    users: {
+      list: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      disable: vi.fn(),
+      resetPassword: vi.fn(),
+    },
+    patients: { list: vi.fn(), search: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), deactivate: vi.fn(), merge: vi.fn(), history: vi.fn() },
+    catalog: { listExams: vi.fn(), saveExam: vi.fn(), deactivateExam: vi.fn(), listParams: vi.fn(), saveParam: vi.fn(), saveRange: vi.fn(), deactivateParam: vi.fn(), import: vi.fn(), export: vi.fn() },
+    medicos: { list: vi.fn(), save: vi.fn(), deactivate: vi.fn() },
+    orders: { create: vi.fn(), update: vi.fn(), get: vi.fn(), list: vi.fn(), advanceStatus: vi.fn(), deliver: vi.fn(), void: vi.fn() },
+    samples: { register: vi.fn(), list: vi.fn(), updateStatus: vi.fn(), reject: vi.fn(), label: vi.fn() },
+    results: { paramsForCapture: vi.fn(), capture: vi.fn(), validate: vi.fn(), reject: vi.fn(), reopen: vi.fn(), comment: vi.fn() },
+    reports: { preview: vi.fn(), print: vi.fn(), savePdf: vi.fn() },
+    payments: { record: vi.fn(), cancel: vi.fn(), listForOrder: vi.fn(), balance: vi.fn() },
+    cierre: { run: vi.fn(), print: vi.fn() },
+    config: { getBcvRate: vi.fn(), setBcvRate: vi.fn(), getLab: vi.fn(), setLab: vi.fn(), setBioanalista: vi.fn(), setLogo: vi.fn(), getPrint: vi.fn(), setPrint: vi.fn() },
+    backup: { create: vi.fn(), list: vi.fn(), restore: vi.fn(), prune: vi.fn() },
+    import: { preview: vi.fn(), apply: vi.fn() },
+    export: { filtered: vi.fn() },
+    audit: { list: vi.fn() },
+    dashboard: { today: vi.fn(), debtors: vi.fn(), stats: vi.fn(), trends: vi.fn() },
+  } as unknown as Window['api']
+})
+
 describe('App', () => {
-  it('renders the LabCore scaffold shell', () => {
+  it('shows the login screen when no session exists', async () => {
+    mockMe.mockResolvedValue({ ok: true, data: null })
     render(<App />)
 
-    expect(screen.getByText('LabCore')).toBeInTheDocument()
-    expect(screen.getByText('Sistema de gestión de laboratorio clínico')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByLabelText('Usuario')).toBeInTheDocument()
+      expect(screen.getByLabelText('Clave')).toBeInTheDocument()
+    })
+  })
+
+  it('shows the workspace placeholder when a session exists', async () => {
+    mockMe.mockResolvedValue({
+      ok: true,
+      data: {
+        userId: 1,
+        usuario: 'admin',
+        nombre: 'Administrador',
+        rol: 'admin',
+        loginAt: new Date().toISOString(),
+        debe_cambiar_clave: false,
+      },
+    })
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Bienvenido, Administrador/).length).toBeGreaterThan(0)
+    })
   })
 })

@@ -5,6 +5,8 @@ import { envelopeSchema } from './errors'
 export const auditActionSchema = z.enum([
   'login',
   'logout',
+  'permiso.denegado',
+  'clave.cambiada',
   'paciente.creado',
   'paciente.editado',
   'paciente.desactivado',

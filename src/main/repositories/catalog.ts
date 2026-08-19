@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 import type { Exam, ExamInput, Parameter, ParameterInput, ReferenceRange, ReferenceRangeInput } from '@/shared/contracts'
-import { fromBoolean, parseJson, stringifyJson, toAgeUnit, toBoolean, toResultType, toSex, toSexScope } from './helpers'
+import { fromBoolean, parseJson, stringifyJson, toAgeUnit, toBoolean, toResultType, toSexScope } from './helpers'
 
 export function rowToExam(row: Record<string, unknown>): Exam {
   return {

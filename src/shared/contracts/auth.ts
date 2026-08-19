@@ -24,9 +24,11 @@ export type User = z.infer<typeof userSchema>
 
 export const sessionSchema = z.object({
   userId: idSchema,
+  usuario: nonemptyStringSchema,
   nombre: nonemptyStringSchema,
   rol: roleSchema,
   loginAt: z.string().datetime(),
+  debe_cambiar_clave: z.boolean(),
 })
 
 export type Session = z.infer<typeof sessionSchema>

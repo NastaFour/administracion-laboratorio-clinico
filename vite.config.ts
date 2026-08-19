@@ -5,6 +5,10 @@ import renderer from 'vite-plugin-electron-renderer'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 
+const alias = {
+  '@': path.resolve(__dirname, './src'),
+}
+
 export default defineConfig({
   plugins: [
     tailwindcss(),
@@ -16,6 +20,7 @@ export default defineConfig({
           args.startup()
         },
         vite: {
+          resolve: { alias },
           build: {
             outDir: 'dist-electron',
             sourcemap: true,
@@ -36,6 +41,7 @@ export default defineConfig({
           args.reload()
         },
         vite: {
+          resolve: { alias },
           build: {
             outDir: 'dist-electron',
             sourcemap: true,
@@ -54,8 +60,6 @@ export default defineConfig({
     renderer(),
   ],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias,
   },
 })

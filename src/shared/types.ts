@@ -1,4 +1,11 @@
 import type { IpcChannels } from './contracts/channels'
+import type { z } from 'zod'
+
+/**
+ * Infer the runtime data type from a channel's request/response schema.
+ */
+type RequestOf<C extends { request: z.ZodType<unknown> }> = z.infer<C['request']>
+type ResponseOf<C extends { response: z.ZodType<unknown> }> = z.infer<C['response']>
 
 /**
  * Renderer-facing API exposed through the Electron preload script.
@@ -7,114 +14,114 @@ import type { IpcChannels } from './contracts/channels'
  */
 export interface LabCoreAPI {
   auth: {
-    login: (req: IpcChannels['auth:login']['request']) => Promise<IpcChannels['auth:login']['response']>
-    logout: () => Promise<IpcChannels['auth:logout']['response']>
-    me: () => Promise<IpcChannels['auth:me']['response']>
-    changePassword: (req: IpcChannels['auth:changePassword']['request']) => Promise<IpcChannels['auth:changePassword']['response']>
+    login: (req: RequestOf<IpcChannels['auth:login']>) => Promise<ResponseOf<IpcChannels['auth:login']>>
+    logout: () => Promise<ResponseOf<IpcChannels['auth:logout']>>
+    me: () => Promise<ResponseOf<IpcChannels['auth:me']>>
+    changePassword: (req: RequestOf<IpcChannels['auth:changePassword']>) => Promise<ResponseOf<IpcChannels['auth:changePassword']>>
   }
   users: {
-    list: () => Promise<IpcChannels['users:list']['response']>
-    create: (req: IpcChannels['users:create']['request']) => Promise<IpcChannels['users:create']['response']>
-    update: (req: IpcChannels['users:update']['request']) => Promise<IpcChannels['users:update']['response']>
-    disable: (req: IpcChannels['users:disable']['request']) => Promise<IpcChannels['users:disable']['response']>
-    resetPassword: (req: IpcChannels['users:resetPassword']['request']) => Promise<IpcChannels['users:resetPassword']['response']>
+    list: () => Promise<ResponseOf<IpcChannels['users:list']>>
+    create: (req: RequestOf<IpcChannels['users:create']>) => Promise<ResponseOf<IpcChannels['users:create']>>
+    update: (req: RequestOf<IpcChannels['users:update']>) => Promise<ResponseOf<IpcChannels['users:update']>>
+    disable: (req: RequestOf<IpcChannels['users:disable']>) => Promise<ResponseOf<IpcChannels['users:disable']>>
+    resetPassword: (req: RequestOf<IpcChannels['users:resetPassword']>) => Promise<ResponseOf<IpcChannels['users:resetPassword']>>
   }
   patients: {
-    list: (req: IpcChannels['patients:list']['request']) => Promise<IpcChannels['patients:list']['response']>
-    search: (req: IpcChannels['patients:search']['request']) => Promise<IpcChannels['patients:search']['response']>
-    get: (req: IpcChannels['patients:get']['request']) => Promise<IpcChannels['patients:get']['response']>
-    create: (req: IpcChannels['patients:create']['request']) => Promise<IpcChannels['patients:create']['response']>
-    update: (req: IpcChannels['patients:update']['request']) => Promise<IpcChannels['patients:update']['response']>
-    deactivate: (req: IpcChannels['patients:deactivate']['request']) => Promise<IpcChannels['patients:deactivate']['response']>
-    merge: (req: IpcChannels['patients:merge']['request']) => Promise<IpcChannels['patients:merge']['response']>
-    history: (req: IpcChannels['patients:history']['request']) => Promise<IpcChannels['patients:history']['response']>
+    list: (req: RequestOf<IpcChannels['patients:list']>) => Promise<ResponseOf<IpcChannels['patients:list']>>
+    search: (req: RequestOf<IpcChannels['patients:search']>) => Promise<ResponseOf<IpcChannels['patients:search']>>
+    get: (req: RequestOf<IpcChannels['patients:get']>) => Promise<ResponseOf<IpcChannels['patients:get']>>
+    create: (req: RequestOf<IpcChannels['patients:create']>) => Promise<ResponseOf<IpcChannels['patients:create']>>
+    update: (req: RequestOf<IpcChannels['patients:update']>) => Promise<ResponseOf<IpcChannels['patients:update']>>
+    deactivate: (req: RequestOf<IpcChannels['patients:deactivate']>) => Promise<ResponseOf<IpcChannels['patients:deactivate']>>
+    merge: (req: RequestOf<IpcChannels['patients:merge']>) => Promise<ResponseOf<IpcChannels['patients:merge']>>
+    history: (req: RequestOf<IpcChannels['patients:history']>) => Promise<ResponseOf<IpcChannels['patients:history']>>
   }
   catalog: {
-    listExams: (req: IpcChannels['catalog:listExams']['request']) => Promise<IpcChannels['catalog:listExams']['response']>
-    saveExam: (req: IpcChannels['catalog:saveExam']['request']) => Promise<IpcChannels['catalog:saveExam']['response']>
-    deactivateExam: (req: IpcChannels['catalog:deactivateExam']['request']) => Promise<IpcChannels['catalog:deactivateExam']['response']>
-    listParams: (req: IpcChannels['catalog:listParams']['request']) => Promise<IpcChannels['catalog:listParams']['response']>
-    saveParam: (req: IpcChannels['catalog:saveParam']['request']) => Promise<IpcChannels['catalog:saveParam']['response']>
-    saveRange: (req: IpcChannels['catalog:saveRange']['request']) => Promise<IpcChannels['catalog:saveRange']['response']>
-    deactivateParam: (req: IpcChannels['catalog:deactivateParam']['request']) => Promise<IpcChannels['catalog:deactivateParam']['response']>
-    import: (req: IpcChannels['catalog:import']['request']) => Promise<IpcChannels['catalog:import']['response']>
-    export: () => Promise<IpcChannels['catalog:export']['response']>
+    listExams: (req: RequestOf<IpcChannels['catalog:listExams']>) => Promise<ResponseOf<IpcChannels['catalog:listExams']>>
+    saveExam: (req: RequestOf<IpcChannels['catalog:saveExam']>) => Promise<ResponseOf<IpcChannels['catalog:saveExam']>>
+    deactivateExam: (req: RequestOf<IpcChannels['catalog:deactivateExam']>) => Promise<ResponseOf<IpcChannels['catalog:deactivateExam']>>
+    listParams: (req: RequestOf<IpcChannels['catalog:listParams']>) => Promise<ResponseOf<IpcChannels['catalog:listParams']>>
+    saveParam: (req: RequestOf<IpcChannels['catalog:saveParam']>) => Promise<ResponseOf<IpcChannels['catalog:saveParam']>>
+    saveRange: (req: RequestOf<IpcChannels['catalog:saveRange']>) => Promise<ResponseOf<IpcChannels['catalog:saveRange']>>
+    deactivateParam: (req: RequestOf<IpcChannels['catalog:deactivateParam']>) => Promise<ResponseOf<IpcChannels['catalog:deactivateParam']>>
+    import: (req: RequestOf<IpcChannels['catalog:import']>) => Promise<ResponseOf<IpcChannels['catalog:import']>>
+    export: () => Promise<ResponseOf<IpcChannels['catalog:export']>>
   }
   medicos: {
-    list: (req: IpcChannels['medicos:list']['request']) => Promise<IpcChannels['medicos:list']['response']>
-    save: (req: IpcChannels['medicos:save']['request']) => Promise<IpcChannels['medicos:save']['response']>
-    deactivate: (req: IpcChannels['medicos:deactivate']['request']) => Promise<IpcChannels['medicos:deactivate']['response']>
+    list: (req: RequestOf<IpcChannels['medicos:list']>) => Promise<ResponseOf<IpcChannels['medicos:list']>>
+    save: (req: RequestOf<IpcChannels['medicos:save']>) => Promise<ResponseOf<IpcChannels['medicos:save']>>
+    deactivate: (req: RequestOf<IpcChannels['medicos:deactivate']>) => Promise<ResponseOf<IpcChannels['medicos:deactivate']>>
   }
   orders: {
-    create: (req: IpcChannels['orders:create']['request']) => Promise<IpcChannels['orders:create']['response']>
-    update: (req: IpcChannels['orders:update']['request']) => Promise<IpcChannels['orders:update']['response']>
-    get: (req: IpcChannels['orders:get']['request']) => Promise<IpcChannels['orders:get']['response']>
-    list: (req: IpcChannels['orders:list']['request']) => Promise<IpcChannels['orders:list']['response']>
-    advanceStatus: (req: IpcChannels['orders:advanceStatus']['request']) => Promise<IpcChannels['orders:advanceStatus']['response']>
-    deliver: (req: IpcChannels['orders:deliver']['request']) => Promise<IpcChannels['orders:deliver']['response']>
-    void: (req: IpcChannels['orders:void']['request']) => Promise<IpcChannels['orders:void']['response']>
+    create: (req: RequestOf<IpcChannels['orders:create']>) => Promise<ResponseOf<IpcChannels['orders:create']>>
+    update: (req: RequestOf<IpcChannels['orders:update']>) => Promise<ResponseOf<IpcChannels['orders:update']>>
+    get: (req: RequestOf<IpcChannels['orders:get']>) => Promise<ResponseOf<IpcChannels['orders:get']>>
+    list: (req: RequestOf<IpcChannels['orders:list']>) => Promise<ResponseOf<IpcChannels['orders:list']>>
+    advanceStatus: (req: RequestOf<IpcChannels['orders:advanceStatus']>) => Promise<ResponseOf<IpcChannels['orders:advanceStatus']>>
+    deliver: (req: RequestOf<IpcChannels['orders:deliver']>) => Promise<ResponseOf<IpcChannels['orders:deliver']>>
+    void: (req: RequestOf<IpcChannels['orders:void']>) => Promise<ResponseOf<IpcChannels['orders:void']>>
   }
   samples: {
-    register: (req: IpcChannels['samples:register']['request']) => Promise<IpcChannels['samples:register']['response']>
-    list: (req: IpcChannels['samples:list']['request']) => Promise<IpcChannels['samples:list']['response']>
-    updateStatus: (req: IpcChannels['samples:updateStatus']['request']) => Promise<IpcChannels['samples:updateStatus']['response']>
-    reject: (req: IpcChannels['samples:reject']['request']) => Promise<IpcChannels['samples:reject']['response']>
-    label: (req: IpcChannels['samples:label']['request']) => Promise<IpcChannels['samples:label']['response']>
+    register: (req: RequestOf<IpcChannels['samples:register']>) => Promise<ResponseOf<IpcChannels['samples:register']>>
+    list: (req: RequestOf<IpcChannels['samples:list']>) => Promise<ResponseOf<IpcChannels['samples:list']>>
+    updateStatus: (req: RequestOf<IpcChannels['samples:updateStatus']>) => Promise<ResponseOf<IpcChannels['samples:updateStatus']>>
+    reject: (req: RequestOf<IpcChannels['samples:reject']>) => Promise<ResponseOf<IpcChannels['samples:reject']>>
+    label: (req: RequestOf<IpcChannels['samples:label']>) => Promise<ResponseOf<IpcChannels['samples:label']>>
   }
   results: {
-    paramsForCapture: (req: IpcChannels['results:paramsForCapture']['request']) => Promise<IpcChannels['results:paramsForCapture']['response']>
-    capture: (req: IpcChannels['results:capture']['request']) => Promise<IpcChannels['results:capture']['response']>
-    validate: (req: IpcChannels['results:validate']['request']) => Promise<IpcChannels['results:validate']['response']>
-    reject: (req: IpcChannels['results:reject']['request']) => Promise<IpcChannels['results:reject']['response']>
-    reopen: (req: IpcChannels['results:reopen']['request']) => Promise<IpcChannels['results:reopen']['response']>
-    comment: (req: IpcChannels['results:comment']['request']) => Promise<IpcChannels['results:comment']['response']>
+    paramsForCapture: (req: RequestOf<IpcChannels['results:paramsForCapture']>) => Promise<ResponseOf<IpcChannels['results:paramsForCapture']>>
+    capture: (req: RequestOf<IpcChannels['results:capture']>) => Promise<ResponseOf<IpcChannels['results:capture']>>
+    validate: (req: RequestOf<IpcChannels['results:validate']>) => Promise<ResponseOf<IpcChannels['results:validate']>>
+    reject: (req: RequestOf<IpcChannels['results:reject']>) => Promise<ResponseOf<IpcChannels['results:reject']>>
+    reopen: (req: RequestOf<IpcChannels['results:reopen']>) => Promise<ResponseOf<IpcChannels['results:reopen']>>
+    comment: (req: RequestOf<IpcChannels['results:comment']>) => Promise<ResponseOf<IpcChannels['results:comment']>>
   }
   reports: {
-    preview: (req: IpcChannels['reports:preview']['request']) => Promise<IpcChannels['reports:preview']['response']>
-    print: (req: IpcChannels['reports:print']['request']) => Promise<IpcChannels['reports:print']['response']>
-    savePdf: (req: IpcChannels['reports:savePdf']['request']) => Promise<IpcChannels['reports:savePdf']['response']>
+    preview: (req: RequestOf<IpcChannels['reports:preview']>) => Promise<ResponseOf<IpcChannels['reports:preview']>>
+    print: (req: RequestOf<IpcChannels['reports:print']>) => Promise<ResponseOf<IpcChannels['reports:print']>>
+    savePdf: (req: RequestOf<IpcChannels['reports:savePdf']>) => Promise<ResponseOf<IpcChannels['reports:savePdf']>>
   }
   payments: {
-    record: (req: IpcChannels['payments:record']['request']) => Promise<IpcChannels['payments:record']['response']>
-    cancel: (req: IpcChannels['payments:cancel']['request']) => Promise<IpcChannels['payments:cancel']['response']>
-    listForOrder: (req: IpcChannels['payments:listForOrder']['request']) => Promise<IpcChannels['payments:listForOrder']['response']>
-    balance: (req: IpcChannels['payments:balance']['request']) => Promise<IpcChannels['payments:balance']['response']>
+    record: (req: RequestOf<IpcChannels['payments:record']>) => Promise<ResponseOf<IpcChannels['payments:record']>>
+    cancel: (req: RequestOf<IpcChannels['payments:cancel']>) => Promise<ResponseOf<IpcChannels['payments:cancel']>>
+    listForOrder: (req: RequestOf<IpcChannels['payments:listForOrder']>) => Promise<ResponseOf<IpcChannels['payments:listForOrder']>>
+    balance: (req: RequestOf<IpcChannels['payments:balance']>) => Promise<ResponseOf<IpcChannels['payments:balance']>>
   }
   cierre: {
-    run: (req: IpcChannels['cierre:run']['request']) => Promise<IpcChannels['cierre:run']['response']>
-    print: (req: IpcChannels['cierre:print']['request']) => Promise<IpcChannels['cierre:print']['response']>
+    run: (req: RequestOf<IpcChannels['cierre:run']>) => Promise<ResponseOf<IpcChannels['cierre:run']>>
+    print: (req: RequestOf<IpcChannels['cierre:print']>) => Promise<ResponseOf<IpcChannels['cierre:print']>>
   }
   config: {
-    getBcvRate: () => Promise<IpcChannels['config:getBcvRate']['response']>
-    setBcvRate: (req: IpcChannels['config:setBcvRate']['request']) => Promise<IpcChannels['config:setBcvRate']['response']>
-    getLab: () => Promise<IpcChannels['config:getLab']['response']>
-    setLab: (req: IpcChannels['config:setLab']['request']) => Promise<IpcChannels['config:setLab']['response']>
-    setBioanalista: (req: IpcChannels['config:setBioanalista']['request']) => Promise<IpcChannels['config:setBioanalista']['response']>
-    setLogo: (req: IpcChannels['config:setLogo']['request']) => Promise<IpcChannels['config:setLogo']['response']>
-    getPrint: () => Promise<IpcChannels['config:getPrint']['response']>
-    setPrint: (req: IpcChannels['config:setPrint']['request']) => Promise<IpcChannels['config:setPrint']['response']>
+    getBcvRate: () => Promise<ResponseOf<IpcChannels['config:getBcvRate']>>
+    setBcvRate: (req: RequestOf<IpcChannels['config:setBcvRate']>) => Promise<ResponseOf<IpcChannels['config:setBcvRate']>>
+    getLab: () => Promise<ResponseOf<IpcChannels['config:getLab']>>
+    setLab: (req: RequestOf<IpcChannels['config:setLab']>) => Promise<ResponseOf<IpcChannels['config:setLab']>>
+    setBioanalista: (req: RequestOf<IpcChannels['config:setBioanalista']>) => Promise<ResponseOf<IpcChannels['config:setBioanalista']>>
+    setLogo: (req: RequestOf<IpcChannels['config:setLogo']>) => Promise<ResponseOf<IpcChannels['config:setLogo']>>
+    getPrint: () => Promise<ResponseOf<IpcChannels['config:getPrint']>>
+    setPrint: (req: RequestOf<IpcChannels['config:setPrint']>) => Promise<ResponseOf<IpcChannels['config:setPrint']>>
   }
   backup: {
-    create: (req: IpcChannels['backup:create']['request']) => Promise<IpcChannels['backup:create']['response']>
-    list: () => Promise<IpcChannels['backup:list']['response']>
-    restore: (req: IpcChannels['backup:restore']['request']) => Promise<IpcChannels['backup:restore']['response']>
-    prune: (req: IpcChannels['backup:prune']['request']) => Promise<IpcChannels['backup:prune']['response']>
+    create: (req: RequestOf<IpcChannels['backup:create']>) => Promise<ResponseOf<IpcChannels['backup:create']>>
+    list: () => Promise<ResponseOf<IpcChannels['backup:list']>>
+    restore: (req: RequestOf<IpcChannels['backup:restore']>) => Promise<ResponseOf<IpcChannels['backup:restore']>>
+    prune: (req: RequestOf<IpcChannels['backup:prune']>) => Promise<ResponseOf<IpcChannels['backup:prune']>>
   }
   import: {
-    preview: (req: IpcChannels['import:preview']['request']) => Promise<IpcChannels['import:preview']['response']>
-    apply: (req: IpcChannels['import:apply']['request']) => Promise<IpcChannels['import:apply']['response']>
+    preview: (req: RequestOf<IpcChannels['import:preview']>) => Promise<ResponseOf<IpcChannels['import:preview']>>
+    apply: (req: RequestOf<IpcChannels['import:apply']>) => Promise<ResponseOf<IpcChannels['import:apply']>>
   }
   export: {
-    filtered: (req: IpcChannels['export:filtered']['request']) => Promise<IpcChannels['export:filtered']['response']>
+    filtered: (req: RequestOf<IpcChannels['export:filtered']>) => Promise<ResponseOf<IpcChannels['export:filtered']>>
   }
   audit: {
-    list: (req: IpcChannels['audit:list']['request']) => Promise<IpcChannels['audit:list']['response']>
+    list: (req: RequestOf<IpcChannels['audit:list']>) => Promise<ResponseOf<IpcChannels['audit:list']>>
   }
   dashboard: {
-    today: (req: IpcChannels['dashboard:today']['request']) => Promise<IpcChannels['dashboard:today']['response']>
-    debtors: (req: IpcChannels['dashboard:debtors']['request']) => Promise<IpcChannels['dashboard:debtors']['response']>
-    stats: (req: IpcChannels['dashboard:stats']['request']) => Promise<IpcChannels['dashboard:stats']['response']>
-    trends: (req: IpcChannels['dashboard:trends']['request']) => Promise<IpcChannels['dashboard:trends']['response']>
+    today: (req: RequestOf<IpcChannels['dashboard:today']>) => Promise<ResponseOf<IpcChannels['dashboard:today']>>
+    debtors: (req: RequestOf<IpcChannels['dashboard:debtors']>) => Promise<ResponseOf<IpcChannels['dashboard:debtors']>>
+    stats: (req: RequestOf<IpcChannels['dashboard:stats']>) => Promise<ResponseOf<IpcChannels['dashboard:stats']>>
+    trends: (req: RequestOf<IpcChannels['dashboard:trends']>) => Promise<ResponseOf<IpcChannels['dashboard:trends']>>
   }
 }
 

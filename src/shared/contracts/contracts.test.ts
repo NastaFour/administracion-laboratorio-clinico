@@ -91,11 +91,14 @@ describe('auth contracts', () => {
   it('accepts a valid session', () => {
     const parsed = sessionSchema.parse({
       userId: 1,
+      usuario: 'admin',
       nombre: 'Admin',
       rol: ROLES.ADMIN,
       loginAt: '2026-08-18T10:30:00.000Z',
+      debe_cambiar_clave: false,
     })
     expect(parsed.rol).toBe(ROLES.ADMIN)
+    expect(parsed.usuario).toBe('admin')
   })
 
   it('accepts a valid user', () => {
