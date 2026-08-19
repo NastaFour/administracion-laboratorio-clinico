@@ -82,6 +82,7 @@ export const CHANNEL_ALLOWLIST = Object.freeze([
   'orders:advanceStatus',
   'orders:deliver',
   'orders:void',
+  'orders:authorizeCredit',
 
   // samples
   'samples:register',

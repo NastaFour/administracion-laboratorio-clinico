@@ -70,6 +70,14 @@ export const orderFiltersSchema = z.object({
 
 export type OrderFilters = z.infer<typeof orderFiltersSchema>
 
+export const authorizeCreditRequestSchema = z.object({
+  id: idSchema,
+  monto: positiveMoneySchema,
+  motivo: z.string().min(1),
+})
+
+export type AuthorizeCreditRequest = z.infer<typeof authorizeCreditRequestSchema>
+
 export const ordersChannels = {
   'orders:create': {
     request: createOrderRequestSchema,
@@ -97,6 +105,10 @@ export const ordersChannels = {
   },
   'orders:void': {
     request: z.object({ id: idSchema, motivo: z.string().min(1) }),
+    response: envelopeSchema(orderSchema),
+  },
+  'orders:authorizeCredit': {
+    request: authorizeCreditRequestSchema,
     response: envelopeSchema(orderSchema),
   },
 } as const

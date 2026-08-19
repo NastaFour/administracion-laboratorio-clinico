@@ -1,6 +1,8 @@
 import type Database from 'better-sqlite3'
 import type { CreateOrderRequest, Order, OrderExam, OrderFilters, OrderWithExams, UpdateOrderRequest } from '@/shared/contracts'
+import { ERROR_CODES } from '@/shared/contracts'
 import { fromBoolean, toBoolean, toIsoString, toOrderStatus } from './helpers'
+import { getExam } from './catalog'
 
 export function rowToOrder(row: Record<string, unknown>): Order {
   return {
@@ -78,6 +80,19 @@ export function listOrders(db: Database.Database, filters: OrderFilters = {}): O
   return rows.map((row) => toOrderWithExams(db, row))
 }
 
+function resolveExamPrices(db: Database.Database, examenes: OrderExam[]): OrderExam[] {
+  return examenes.map((exam) => {
+    const catalog = getExam(db, exam.examen_id)
+    if (!catalog) {
+      throw new Error(ERROR_CODES.NOT_FOUND)
+    }
+    return {
+      ...exam,
+      precio: catalog.precio,
+    }
+  })
+}
+
 function computeTotal(examenes: OrderExam[]): number {
   return examenes.reduce((sum, exam) => sum + exam.precio, 0)
 }
@@ -92,7 +107,8 @@ function insertOrderExams(db: Database.Database, ordenId: number, examenes: Orde
 }
 
 export function createOrder(db: Database.Database, input: CreateOrderRequest): OrderWithExams {
-  const total = computeTotal(input.examenes)
+  const resolved = resolveExamPrices(db, input.examenes)
+  const total = computeTotal(resolved)
   const result = db
     .prepare(
       `INSERT INTO ordenes (paciente_id, medico_id, empresa_id, estatus, observaciones, precio_total, estatus_pago)
@@ -100,7 +116,7 @@ export function createOrder(db: Database.Database, input: CreateOrderRequest): O
     )
     .run(input.paciente_id, input.medico_id, input.empresa_id, input.observaciones, total)
   const id = Number(result.lastInsertRowid)
-  insertOrderExams(db, id, input.examenes)
+  insertOrderExams(db, id, resolved)
   const order = getOrder(db, id)
   if (!order) {
     throw new Error('Order was not created')
@@ -116,12 +132,13 @@ export function updateOrder(db: Database.Database, input: UpdateOrderRequest): O
   if (existing.cerrada) {
     throw new Error('Cannot edit a closed order')
   }
-  const total = computeTotal(input.examenes)
+  const resolved = resolveExamPrices(db, input.examenes)
+  const total = computeTotal(resolved)
   db.prepare(
     'UPDATE ordenes SET paciente_id = ?, medico_id = ?, empresa_id = ?, observaciones = ?, precio_total = ? WHERE id = ?',
   ).run(input.paciente_id, input.medico_id, input.empresa_id, input.observaciones, total, input.id)
   db.prepare('DELETE FROM orden_examenes WHERE orden_id = ?').run(input.id)
-  insertOrderExams(db, input.id, input.examenes)
+  insertOrderExams(db, input.id, resolved)
   const order = getOrder(db, input.id)
   if (!order) {
     throw new Error('Order not found after update')
@@ -152,6 +169,15 @@ export function setOrderCerrada(db: Database.Database, id: number, cerrada = tru
   const order = getOrder(db, id)
   if (!order) {
     throw new Error('Order not found after closing')
+  }
+  return order
+}
+
+export function setOrderCredito(db: Database.Database, id: number): OrderWithExams {
+  db.prepare('UPDATE ordenes SET credito = 1 WHERE id = ?').run(id)
+  const order = getOrder(db, id)
+  if (!order) {
+    throw new Error('Order not found after credit authorization')
   }
   return order
 }

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Users, LogOut, Beaker, FlaskConical, Settings } from 'lucide-react'
+import { Users, LogOut, Beaker, FlaskConical, Settings, FileText, Stethoscope } from 'lucide-react'
 import { Login } from './features/auth/Login'
 import { LockScreen } from './features/auth/LockScreen'
 import { PatientsPage } from './features/patients/PatientsPage'
 import { CatalogPage } from './features/catalog/CatalogPage'
+import { OrdersPage } from './features/orders/OrdersPage'
+import { MedicosPage } from './features/medicos/MedicosPage'
 import { useSessionStore } from './stores/useSessionStore'
 import { cn } from './lib/cn'
 
-type Tab = 'patients' | 'catalog' | 'settings'
+type Tab = 'patients' | 'catalog' | 'orders' | 'medicos' | 'settings'
 
 function App() {
   const { session, locked, restore, resetIdle, logout } = useSessionStore()
@@ -71,6 +73,18 @@ function App() {
             onClick={() => setActiveTab('catalog')}
           />
           <NavItem
+            icon={FileText}
+            label="Órdenes"
+            active={activeTab === 'orders'}
+            onClick={() => setActiveTab('orders')}
+          />
+          <NavItem
+            icon={Stethoscope}
+            label="Médicos"
+            active={activeTab === 'medicos'}
+            onClick={() => setActiveTab('medicos')}
+          />
+          <NavItem
             icon={Settings}
             label="Configuración"
             active={activeTab === 'settings'}
@@ -99,6 +113,8 @@ function App() {
       <main className="flex-1 p-6 overflow-auto">
         {activeTab === 'patients' && <PatientsPage />}
         {activeTab === 'catalog' && <CatalogPage />}
+        {activeTab === 'orders' && <OrdersPage />}
+        {activeTab === 'medicos' && <MedicosPage />}
         {activeTab === 'settings' && (
           <div className="rounded-lg border border-paper-200 bg-paper-50 p-8 text-center">
             <p className="text-ink-500">Configuración disponible en próxima entrega.</p>

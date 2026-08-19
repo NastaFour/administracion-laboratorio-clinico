@@ -62,6 +62,7 @@ export interface LabCoreAPI {
     advanceStatus: (req: RequestOf<IpcChannels['orders:advanceStatus']>) => Promise<ResponseOf<IpcChannels['orders:advanceStatus']>>
     deliver: (req: RequestOf<IpcChannels['orders:deliver']>) => Promise<ResponseOf<IpcChannels['orders:deliver']>>
     void: (req: RequestOf<IpcChannels['orders:void']>) => Promise<ResponseOf<IpcChannels['orders:void']>>
+    authorizeCredit: (req: RequestOf<IpcChannels['orders:authorizeCredit']>) => Promise<ResponseOf<IpcChannels['orders:authorizeCredit']>>
   }
   samples: {
     register: (req: RequestOf<IpcChannels['samples:register']>) => Promise<ResponseOf<IpcChannels['samples:register']>>
