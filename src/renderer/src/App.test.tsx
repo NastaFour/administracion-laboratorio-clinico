@@ -1,11 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, cleanup } from '@testing-library/react'
 import App from './App'
 
 const mockMe = vi.fn()
+const mockPatientsList = vi.fn()
+const mockPatientsSearch = vi.fn()
 
 beforeEach(() => {
   mockMe.mockReset()
+  mockPatientsList.mockReset()
+  mockPatientsSearch.mockReset()
+  mockPatientsList.mockResolvedValue({ ok: true, data: [] })
+  mockPatientsSearch.mockResolvedValue({ ok: true, data: [] })
+
   window.api = {
     auth: {
       login: vi.fn(),
@@ -20,7 +27,7 @@ beforeEach(() => {
       disable: vi.fn(),
       resetPassword: vi.fn(),
     },
-    patients: { list: vi.fn(), search: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), deactivate: vi.fn(), merge: vi.fn(), history: vi.fn() },
+    patients: { list: mockPatientsList, search: mockPatientsSearch, get: vi.fn(), create: vi.fn(), update: vi.fn(), deactivate: vi.fn(), merge: vi.fn(), history: vi.fn() },
     catalog: { listExams: vi.fn(), saveExam: vi.fn(), deactivateExam: vi.fn(), listParams: vi.fn(), saveParam: vi.fn(), saveRange: vi.fn(), deactivateParam: vi.fn(), import: vi.fn(), export: vi.fn() },
     medicos: { list: vi.fn(), save: vi.fn(), deactivate: vi.fn() },
     orders: { create: vi.fn(), update: vi.fn(), get: vi.fn(), list: vi.fn(), advanceStatus: vi.fn(), deliver: vi.fn(), void: vi.fn() },
@@ -40,6 +47,7 @@ beforeEach(() => {
 
 describe('App', () => {
   it('shows the login screen when no session exists', async () => {
+    cleanup()
     mockMe.mockResolvedValue({ ok: true, data: null })
     render(<App />)
 
@@ -49,7 +57,8 @@ describe('App', () => {
     })
   })
 
-  it('shows the workspace placeholder when a session exists', async () => {
+  it('shows the patients workspace when a session exists', async () => {
+    cleanup()
     mockMe.mockResolvedValue({
       ok: true,
       data: {
@@ -64,7 +73,8 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getAllByText(/Bienvenido, Administrador/).length).toBeGreaterThan(0)
+      expect(screen.getByTestId('patients-heading')).toBeInTheDocument()
+      expect(screen.getByText('Administrador')).toBeInTheDocument()
     })
   })
 })

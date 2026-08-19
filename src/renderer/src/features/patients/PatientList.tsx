@@ -1,0 +1,97 @@
+import { Search, Edit, Trash2, History } from 'lucide-react'
+import { Input } from '../../components/ui/Input'
+import { Button } from '../../components/ui/Button'
+import type { Patient } from '@/shared/contracts'
+
+interface PatientListProps {
+  patients: Patient[]
+  searchQuery: string
+  onSearchChange: (value: string) => void
+  onEdit: (patient: Patient) => void
+  onDeactivate: (patient: Patient) => void
+  onHistory: (patient: Patient) => void
+}
+
+export function PatientList({
+  patients,
+  searchQuery,
+  onSearchChange,
+  onEdit,
+  onDeactivate,
+  onHistory,
+}: PatientListProps) {
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" size={18} />
+        <Input
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Buscar por cédula, nombre o teléfono…"
+          className="pl-10"
+        />
+      </div>
+
+      {patients.length === 0 ? (
+        <div className="rounded-lg border border-paper-200 bg-paper-50 p-8 text-center">
+          <p className="text-ink-500">No se encontraron pacientes.</p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-paper-200">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-paper-100 text-ink-700">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Cédula</th>
+                <th className="px-4 py-3 font-semibold">Nombre</th>
+                <th className="px-4 py-3 font-semibold">Teléfono</th>
+                <th className="px-4 py-3 font-semibold text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-paper-200">
+              {patients.map((patient) => (
+                <tr key={patient.id} className="hover:bg-paper-50">
+                  <td className="px-4 py-3 font-medium text-ink-900">{patient.cedula}</td>
+                  <td className="px-4 py-3 text-ink-700">
+                    {patient.nombre} {patient.apellido}
+                  </td>
+                  <td className="px-4 py-3 text-ink-600">{patient.telefono ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onHistory(patient)}
+                        aria-label="Ver historial"
+                        title="Ver historial"
+                      >
+                        <History size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(patient)}
+                        aria-label="Editar"
+                        title="Editar"
+                      >
+                        <Edit size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDeactivate(patient)}
+                        aria-label="Desactivar"
+                        title="Desactivar"
+                      >
+                        <Trash2 size={16} className="text-danger-600" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}

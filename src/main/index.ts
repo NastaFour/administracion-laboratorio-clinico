@@ -7,6 +7,7 @@ import { hashPassword } from './services/auth'
 import { bootstrapAdminUser } from './repositories/users'
 import { registerAuthHandlers } from './ipc/auth.ipc'
 import { registerUsersHandlers } from './ipc/users.ipc'
+import { registerPatientsHandlers } from './ipc/patients.ipc'
 import { configureGuardDependencies } from './ipc/register'
 import { getSession } from './services/auth'
 import { writeAudit } from './services/audit'
@@ -32,6 +33,7 @@ async function bootstrap(): Promise<void> {
 
   registerAuthHandlers(db)
   registerUsersHandlers(db)
+  registerPatientsHandlers(db)
 }
 
 app.whenReady().then(async () => {

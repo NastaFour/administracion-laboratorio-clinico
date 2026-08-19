@@ -132,3 +132,54 @@ export function deactivatePatient(db: Database.Database, id: number): Patient {
   }
   return patient
 }
+
+export interface PatientHistoryOrder {
+  orden_id: number
+  estatus: string
+  estatus_pago: string
+  precio_total: number
+  fecha_solicitud: string
+  examenes: Array<{
+    examen_id: number
+    examen_nombre: string
+  }>
+}
+
+export function getPatientHistory(db: Database.Database, id: number): PatientHistoryOrder[] {
+  const orders = db
+    .prepare(
+      `SELECT id, estatus, estatus_pago, precio_total, fecha_solicitud
+       FROM ordenes
+       WHERE paciente_id = ?
+       ORDER BY fecha_solicitud DESC`,
+    )
+    .all(id) as Array<{
+      id: number
+      estatus: string
+      estatus_pago: string
+      precio_total: number
+      fecha_solicitud: string
+    }>
+
+  const examStmt = db.prepare(
+    `SELECT oe.examen_id, ec.nombre AS examen_nombre
+     FROM orden_examenes oe
+     JOIN examenes_catalogo ec ON ec.id = oe.examen_id
+     WHERE oe.orden_id = ?`,
+  )
+
+  return orders.map((order) => ({
+    orden_id: order.id,
+    estatus: order.estatus,
+    estatus_pago: order.estatus_pago,
+    precio_total: order.precio_total,
+    fecha_solicitud: order.fecha_solicitud,
+    examenes: (examStmt.all(order.id) as Array<{
+      examen_id: number
+      examen_nombre: string
+    }>).map((row) => ({
+      examen_id: row.examen_id,
+      examen_nombre: row.examen_nombre,
+    })),
+  }))
+}
