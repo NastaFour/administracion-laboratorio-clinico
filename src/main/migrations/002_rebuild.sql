@@ -135,10 +135,12 @@ ALTER TABLE examenes_catalogo ADD COLUMN proveedor TEXT;
 
 ALTER TABLE parametros_examen ADD COLUMN tipo_resultado TEXT CHECK(tipo_resultado IN ('numerico', 'cualitativo')) DEFAULT 'numerico';
 ALTER TABLE parametros_examen ADD COLUMN opciones_cualitativas TEXT CHECK(json_valid(opciones_cualitativas));
+ALTER TABLE parametros_examen ADD COLUMN activo INTEGER DEFAULT 1;
 
 ALTER TABLE valores_referencia ADD COLUMN edad_unidad TEXT CHECK(edad_unidad IN ('dias', 'meses', 'anios')) DEFAULT 'anios';
 ALTER TABLE valores_referencia ADD COLUMN valor_min_critico REAL;
 ALTER TABLE valores_referencia ADD COLUMN valor_max_critico REAL;
+ALTER TABLE valores_referencia ADD COLUMN activo INTEGER DEFAULT 1;
 
 ALTER TABLE ordenes ADD COLUMN medico_id INTEGER REFERENCES medicos_referentes(id);
 ALTER TABLE ordenes ADD COLUMN empresa_id INTEGER REFERENCES empresas(id);
