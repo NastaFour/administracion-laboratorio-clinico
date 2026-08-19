@@ -10,6 +10,7 @@ export default defineConfig([
     'dist',
     'dist-electron',
     'release',
+    'coverage',
     'node_modules',
     'electron/**/*',
     'src/App.tsx',

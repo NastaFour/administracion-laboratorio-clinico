@@ -7,13 +7,17 @@ import {
   createRange,
   deactivateExam,
   deactivateParam,
+  deactivateRange,
   getExam,
   getExamByCode,
   getParam,
+  getRange,
   listExams,
   listParams,
+  listRanges,
   updateExam,
   updateParam,
+  updateRange,
 } from '../repositories/catalog'
 import { writeAudit } from '../services/audit'
 import type { Exam, ExamInput, Parameter, ParameterInput, ReferenceRange, ReferenceRangeInput, Session } from '@/shared/contracts'
@@ -162,17 +166,73 @@ export async function handleDeactivateParam(
   return param
 }
 
+export async function handleListRanges(
+  db: Database.Database,
+  req: { parametroId: number },
+): Promise<ReferenceRange[]> {
+  return listRanges(db, req.parametroId, true)
+}
+
 export async function handleSaveRange(
   db: Database.Database,
   req: ReferenceRangeInput & { id?: number },
+  session: Session,
 ): Promise<ReferenceRange> {
   const { id, ...input } = req
 
   if (id === undefined) {
-    return createRange(db, input)
+    const range = createRange(db, input)
+    writeAudit(db, {
+      usuario_id: session.userId,
+      accion: 'catalogo.rango.creado',
+      entidad: 'valores_referencia',
+      entidad_id: range.id,
+      despues: range,
+    })
+    return range
   }
 
-  throw new Error(ERROR_CODES.CONFLICT)
+  const before = getRange(db, id)
+  if (!before) {
+    throw new Error(ERROR_CODES.NOT_FOUND)
+  }
+
+  if (input.parametro_id !== before.parametro_id) {
+    throw new Error(ERROR_CODES.VALIDATION_ERROR)
+  }
+
+  const range = updateRange(db, id, input)
+  writeAudit(db, {
+    usuario_id: session.userId,
+    accion: 'catalogo.rango.editado',
+    entidad: 'valores_referencia',
+    entidad_id: range.id,
+    antes: before,
+    despues: range,
+  })
+  return range
+}
+
+export async function handleDeactivateRange(
+  db: Database.Database,
+  req: { id: number },
+  session: Session,
+): Promise<ReferenceRange> {
+  const before = getRange(db, req.id)
+  if (!before) {
+    throw new Error(ERROR_CODES.NOT_FOUND)
+  }
+
+  const range = deactivateRange(db, req.id)
+  writeAudit(db, {
+    usuario_id: session.userId,
+    accion: 'catalogo.rango.desactivado',
+    entidad: 'valores_referencia',
+    entidad_id: range.id,
+    antes: before,
+    despues: range,
+  })
+  return range
 }
 
 export async function handleImportCatalog(): Promise<never> {
@@ -202,7 +262,15 @@ export function registerCatalogHandlers(db: Database.Database): void {
     catalogChannels['catalog:deactivateParam'].request,
     handleDeactivateParam,
   )
+  handle(db, 'catalog:listRanges', READ_ROLES, catalogChannels['catalog:listRanges'].request, handleListRanges)
   handle(db, 'catalog:saveRange', MANAGE_ROLES, catalogChannels['catalog:saveRange'].request, handleSaveRange)
+  handle(
+    db,
+    'catalog:deactivateRange',
+    MANAGE_ROLES,
+    catalogChannels['catalog:deactivateRange'].request,
+    handleDeactivateRange,
+  )
   handle(db, 'catalog:import', MANAGE_ROLES, catalogChannels['catalog:import'].request, handleImportCatalog)
   handle(db, 'catalog:export', READ_ROLES, catalogChannels['catalog:export'].request, handleExportCatalog)
 }

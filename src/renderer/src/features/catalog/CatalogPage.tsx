@@ -179,6 +179,7 @@ export function CatalogPage() {
           <ParamForm
             param={editingParam}
             examenId={selectedExam.id}
+            canManage={canManage}
             onSaved={() => {
               setShowParamForm(false)
               void refetchParams()

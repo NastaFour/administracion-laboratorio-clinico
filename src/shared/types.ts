@@ -42,7 +42,9 @@ export interface LabCoreAPI {
     deactivateExam: (req: RequestOf<IpcChannels['catalog:deactivateExam']>) => Promise<ResponseOf<IpcChannels['catalog:deactivateExam']>>
     listParams: (req: RequestOf<IpcChannels['catalog:listParams']>) => Promise<ResponseOf<IpcChannels['catalog:listParams']>>
     saveParam: (req: RequestOf<IpcChannels['catalog:saveParam']>) => Promise<ResponseOf<IpcChannels['catalog:saveParam']>>
+    listRanges: (req: RequestOf<IpcChannels['catalog:listRanges']>) => Promise<ResponseOf<IpcChannels['catalog:listRanges']>>
     saveRange: (req: RequestOf<IpcChannels['catalog:saveRange']>) => Promise<ResponseOf<IpcChannels['catalog:saveRange']>>
+    deactivateRange: (req: RequestOf<IpcChannels['catalog:deactivateRange']>) => Promise<ResponseOf<IpcChannels['catalog:deactivateRange']>>
     deactivateParam: (req: RequestOf<IpcChannels['catalog:deactivateParam']>) => Promise<ResponseOf<IpcChannels['catalog:deactivateParam']>>
     import: (req: RequestOf<IpcChannels['catalog:import']>) => Promise<ResponseOf<IpcChannels['catalog:import']>>
     export: () => Promise<ResponseOf<IpcChannels['catalog:export']>>

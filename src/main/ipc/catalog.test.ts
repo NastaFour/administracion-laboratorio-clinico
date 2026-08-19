@@ -3,12 +3,15 @@ import { createTestDb, createUser } from '../repositories/test-helpers'
 import {
   handleDeactivateExam,
   handleDeactivateParam,
+  handleDeactivateRange,
   handleListExams,
   handleListParams,
+  handleListRanges,
   handleSaveExam,
   handleSaveParam,
+  handleSaveRange,
 } from './catalog.ipc'
-import { ERROR_CODES, RESULT_TYPE } from '@/shared/contracts'
+import { AGE_UNIT, ERROR_CODES, RESULT_TYPE, SEX } from '@/shared/contracts'
 import type { Session } from '@/shared/contracts'
 
 const ADMIN_SESSION: Session = {
@@ -251,5 +254,174 @@ describe('catalog ipc', () => {
       ADMIN_SESSION,
     )
     expect(unchanged.nombre).toBe('Primero editado')
+  })
+
+  it('creates and lists reference ranges for a parameter', async () => {
+    const exam = await handleSaveExam(
+      testDb.db,
+      {
+        codigo: 'RNG01',
+        nombre: 'Examen con Rangos',
+        categoria: 'Test',
+        tipo_muestra: 'Sangre',
+        precio: 10,
+        tercerizado: false,
+        proveedor: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    const param = await handleSaveParam(
+      testDb.db,
+      {
+        examen_id: exam.id,
+        nombre: 'Hemoglobina',
+        orden: 1,
+        unidad: 'g/dL',
+        tipo_resultado: RESULT_TYPE.NUMERICO,
+        opciones_cualitativas: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    await handleSaveRange(
+      testDb.db,
+      {
+        parametro_id: param.id,
+        sexo: SEX.MALE,
+        edad_unidad: AGE_UNIT.ANIOS,
+        edad_min: 18,
+        edad_max: 99,
+        valor_min: 13.5,
+        valor_max: 17.5,
+        interpretacion: null,
+        valor_min_critico: 7,
+        valor_max_critico: 21,
+      },
+      ADMIN_SESSION,
+    )
+
+    const ranges = await handleListRanges(testDb.db, { parametroId: param.id })
+    expect(ranges).toHaveLength(1)
+    expect(ranges[0].sexo).toBe(SEX.MALE)
+    expect(ranges[0].edad_unidad).toBe(AGE_UNIT.ANIOS)
+  })
+
+  it('updates a reference range', async () => {
+    const exam = await handleSaveExam(
+      testDb.db,
+      {
+        codigo: 'RNG02',
+        nombre: 'Examen con Rango',
+        categoria: 'Test',
+        tipo_muestra: 'Sangre',
+        precio: 10,
+        tercerizado: false,
+        proveedor: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    const param = await handleSaveParam(
+      testDb.db,
+      {
+        examen_id: exam.id,
+        nombre: 'Glucosa',
+        orden: 1,
+        unidad: 'mg/dL',
+        tipo_resultado: RESULT_TYPE.NUMERICO,
+        opciones_cualitativas: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    const created = await handleSaveRange(
+      testDb.db,
+      {
+        parametro_id: param.id,
+        sexo: 'Ambos',
+        edad_unidad: AGE_UNIT.ANIOS,
+        edad_min: 0,
+        edad_max: 99,
+        valor_min: 70,
+        valor_max: 100,
+        interpretacion: null,
+        valor_min_critico: null,
+        valor_max_critico: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    const updated = await handleSaveRange(
+      testDb.db,
+      {
+        id: created.id,
+        parametro_id: param.id,
+        sexo: 'Ambos',
+        edad_unidad: AGE_UNIT.ANIOS,
+        edad_min: 0,
+        edad_max: 99,
+        valor_min: 70,
+        valor_max: 110,
+        interpretacion: null,
+        valor_min_critico: null,
+        valor_max_critico: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    expect(updated.valor_max).toBe(110)
+  })
+
+  it('deactivates a reference range', async () => {
+    const exam = await handleSaveExam(
+      testDb.db,
+      {
+        codigo: 'RNG03',
+        nombre: 'Examen con Rango',
+        categoria: 'Test',
+        tipo_muestra: 'Sangre',
+        precio: 10,
+        tercerizado: false,
+        proveedor: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    const param = await handleSaveParam(
+      testDb.db,
+      {
+        examen_id: exam.id,
+        nombre: 'Colesterol',
+        orden: 1,
+        unidad: 'mg/dL',
+        tipo_resultado: RESULT_TYPE.NUMERICO,
+        opciones_cualitativas: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    const created = await handleSaveRange(
+      testDb.db,
+      {
+        parametro_id: param.id,
+        sexo: 'Ambos',
+        edad_unidad: AGE_UNIT.ANIOS,
+        edad_min: 0,
+        edad_max: 99,
+        valor_min: 0,
+        valor_max: 200,
+        interpretacion: null,
+        valor_min_critico: null,
+        valor_max_critico: null,
+      },
+      ADMIN_SESSION,
+    )
+
+    const deactivated = await handleDeactivateRange(testDb.db, { id: created.id }, ADMIN_SESSION)
+    expect(deactivated.activo).toBe(false)
+
+    const active = await handleListRanges(testDb.db, { parametroId: param.id })
+    expect(active).toHaveLength(0)
   })
 })

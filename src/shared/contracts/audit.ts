@@ -29,6 +29,9 @@ export const auditActionSchema = z.enum([
   'catalogo.parametro.creado',
   'catalogo.parametro.editado',
   'catalogo.parametro.desactivado',
+  'catalogo.rango.creado',
+  'catalogo.rango.editado',
+  'catalogo.rango.desactivado',
   'reporte.impreso',
   'import.aplicado',
   'export.generado',
@@ -48,6 +51,7 @@ export const auditEntitySchema = z.enum([
   'export',
   'examenes_catalogo',
   'parametros_examen',
+  'valores_referencia',
 ])
 
 export type AuditEntity = z.infer<typeof auditEntitySchema>

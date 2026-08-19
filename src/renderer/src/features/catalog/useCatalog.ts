@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Exam, ExamInput, Parameter, ParameterInput } from '@/shared/contracts'
+import type { Exam, ExamInput, Parameter, ParameterInput, ReferenceRange, ReferenceRangeInput } from '@/shared/contracts'
 
 interface UseCatalogOptions {
   includeInactive?: boolean
@@ -109,6 +109,61 @@ export function useParameters(examenId: number | null) {
   }, [])
 
   return { params, loading, error, refetch: fetch, saveParam, deactivateParam }
+}
+
+export function useRanges(parametroId: number | null) {
+  const [ranges, setRanges] = useState<ReferenceRange[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetch = useCallback(async () => {
+    if (parametroId === null) {
+      setRanges([])
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await window.api.catalog.listRanges({ parametroId })
+      if (!result.ok) {
+        setError(mapError(result.error.code))
+        return
+      }
+      setRanges(result.data)
+    } finally {
+      setLoading(false)
+    }
+  }, [parametroId])
+
+  useEffect(() => {
+    void fetch()
+  }, [fetch])
+
+  const saveRange = useCallback(async (input: ReferenceRangeInput & { id?: number }) => {
+    const result = await window.api.catalog.saveRange(input)
+    if (!result.ok) {
+      return { ok: false, error: mapError(result.error.code) } as const
+    }
+    setRanges((prev) => {
+      const exists = prev.some((r) => r.id === result.data.id)
+      if (exists) {
+        return prev.map((r) => (r.id === result.data.id ? result.data : r))
+      }
+      return [...prev, result.data]
+    })
+    return { ok: true, range: result.data } as const
+  }, [])
+
+  const deactivateRange = useCallback(async (id: number) => {
+    const result = await window.api.catalog.deactivateRange({ id })
+    if (!result.ok) {
+      return { ok: false, error: mapError(result.error.code) } as const
+    }
+    setRanges((prev) => prev.filter((r) => r.id !== id))
+    return { ok: true } as const
+  }, [])
+
+  return { ranges, loading, error, refetch: fetch, saveRange, deactivateRange }
 }
 
 function mapError(code: string): string {

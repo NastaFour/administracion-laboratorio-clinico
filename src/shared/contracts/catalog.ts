@@ -86,8 +86,16 @@ export const catalogChannels = {
     request: parameterInputSchema.extend({ id: idSchema.optional() }),
     response: envelopeSchema(parameterSchema),
   },
+  'catalog:listRanges': {
+    request: z.object({ parametroId: idSchema }),
+    response: envelopeSchema(z.array(referenceRangeSchema)),
+  },
   'catalog:saveRange': {
     request: referenceRangeInputSchema.extend({ id: idSchema.optional() }),
+    response: envelopeSchema(referenceRangeSchema),
+  },
+  'catalog:deactivateRange': {
+    request: z.object({ id: idSchema }),
     response: envelopeSchema(referenceRangeSchema),
   },
   'catalog:deactivateParam': {

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { RangeEditor } from './RangeEditor'
 import { RESULT_TYPE } from '@/shared/contracts'
 import type { Parameter, ParameterInput } from '@/shared/contracts'
 
 interface ParamFormProps {
   param?: Parameter | null
   examenId: number
+  canManage: boolean
   onSaved: () => void
   onCancel: () => void
   onSubmit: (input: ParameterInput & { id?: number }) => Promise<{ ok: boolean; error?: string }>
@@ -33,7 +35,7 @@ function paramToForm(param: Parameter | null | undefined): ParameterInput {
   }
 }
 
-export function ParamForm({ param, examenId, onSaved, onCancel, onSubmit }: ParamFormProps) {
+export function ParamForm({ param, examenId, canManage, onSaved, onCancel, onSubmit }: ParamFormProps) {
   const [form, setForm] = useState<ParameterInput>(() => ({
     ...paramToForm(param),
     examen_id: examenId,
@@ -162,6 +164,8 @@ export function ParamForm({ param, examenId, onSaved, onCancel, onSubmit }: Para
           error={errors.opciones_cualitativas}
         />
       )}
+
+      {param?.id !== undefined && <RangeEditor parametroId={param.id} canManage={canManage} />}
 
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
