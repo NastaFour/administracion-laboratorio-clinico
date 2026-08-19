@@ -1,13 +1,17 @@
-import { useEffect } from 'react'
-import { Users, LogOut, Beaker } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Users, LogOut, Beaker, FlaskConical, Settings } from 'lucide-react'
 import { Login } from './features/auth/Login'
 import { LockScreen } from './features/auth/LockScreen'
 import { PatientsPage } from './features/patients/PatientsPage'
+import { CatalogPage } from './features/catalog/CatalogPage'
 import { useSessionStore } from './stores/useSessionStore'
 import { cn } from './lib/cn'
 
+type Tab = 'patients' | 'catalog' | 'settings'
+
 function App() {
   const { session, locked, restore, resetIdle, logout } = useSessionStore()
+  const [activeTab, setActiveTab] = useState<Tab>('patients')
 
   useEffect(() => {
     void restore()
@@ -54,7 +58,24 @@ function App() {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          <NavItem icon={Users} label="Pacientes" active />
+          <NavItem
+            icon={Users}
+            label="Pacientes"
+            active={activeTab === 'patients'}
+            onClick={() => setActiveTab('patients')}
+          />
+          <NavItem
+            icon={FlaskConical}
+            label="Catálogo"
+            active={activeTab === 'catalog'}
+            onClick={() => setActiveTab('catalog')}
+          />
+          <NavItem
+            icon={Settings}
+            label="Configuración"
+            active={activeTab === 'settings'}
+            onClick={() => setActiveTab('settings')}
+          />
         </nav>
 
         <div className="p-4 border-t border-paper-200 space-y-3">
@@ -76,7 +97,13 @@ function App() {
       </aside>
 
       <main className="flex-1 p-6 overflow-auto">
-        <PatientsPage />
+        {activeTab === 'patients' && <PatientsPage />}
+        {activeTab === 'catalog' && <CatalogPage />}
+        {activeTab === 'settings' && (
+          <div className="rounded-lg border border-paper-200 bg-paper-50 p-8 text-center">
+            <p className="text-ink-500">Configuración disponible en próxima entrega.</p>
+          </div>
+        )}
       </main>
     </div>
   )
@@ -86,11 +113,13 @@ interface NavItemProps {
   icon: React.ComponentType<{ size?: number }>
   label: string
   active?: boolean
+  onClick?: () => void
 }
 
-function NavItem({ icon: Icon, label, active }: NavItemProps) {
+function NavItem({ icon: Icon, label, active, onClick }: NavItemProps) {
   return (
     <button
+      onClick={onClick}
       className={cn(
         'w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
         active

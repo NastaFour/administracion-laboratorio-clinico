@@ -23,6 +23,12 @@ export const auditActionSchema = z.enum([
   'usuario.creado',
   'usuario.editado',
   'usuario.deshabilitado',
+  'catalogo.examen.creado',
+  'catalogo.examen.editado',
+  'catalogo.examen.desactivado',
+  'catalogo.parametro.creado',
+  'catalogo.parametro.editado',
+  'catalogo.parametro.desactivado',
   'reporte.impreso',
   'import.aplicado',
   'export.generado',
@@ -40,6 +46,8 @@ export const auditEntitySchema = z.enum([
   'backup',
   'import',
   'export',
+  'examenes_catalogo',
+  'parametros_examen',
 ])
 
 export type AuditEntity = z.infer<typeof auditEntitySchema>
