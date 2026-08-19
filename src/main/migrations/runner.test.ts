@@ -276,4 +276,113 @@ describe('migration runner', () => {
     expect(second.applied).toHaveLength(0)
     expect(second.backupPath).toBeNull()
   })
+
+  it('applies 002_rebuild to a v1 fixture, keeps v1 data, and records schema_version 2', async () => {
+    const dbPath = path.join(tmpDir, 'v1.db')
+    const backupsDir = path.join(tmpDir, 'backups')
+    createV1Fixture(dbPath)
+
+    const migrationsDir = path.join(tmpDir, 'migrations')
+    fs.mkdirSync(migrationsDir)
+    fs.copyFileSync(
+      path.join(__dirname, '001_baseline.sql'),
+      path.join(migrationsDir, '001_baseline.sql'),
+    )
+    fs.copyFileSync(
+      path.join(__dirname, '002_rebuild.sql'),
+      path.join(migrationsDir, '002_rebuild.sql'),
+    )
+
+    const migrations = loadMigrationsFromDir(migrationsDir)
+    const result = await runMigrations(dbPath, migrations, backupsDir)
+
+    expect(result.initialVersion).toBe(0)
+    expect(result.finalVersion).toBe(2)
+    expect(result.applied).toHaveLength(1)
+    expect(result.applied[0].version).toBe(2)
+    expect(result.applied[0].name).toBe('rebuild')
+    expect(result.backupPath).not.toBeNull()
+    expect(fs.existsSync(result.backupPath!)).toBe(true)
+
+    const db = new Database(dbPath)
+    try {
+      const version = db.prepare('SELECT version, nombre FROM schema_version WHERE version = 2').get() as {
+        version: number
+        nombre: string
+      }
+      expect(version.version).toBe(2)
+      expect(version.nombre).toBe('rebuild')
+
+      const config = db.prepare('SELECT valor FROM configuracion WHERE clave = ?').get('lab_nombre') as {
+        valor: string
+      }
+      expect(config.valor).toBe('LAB V1')
+
+      const custom = db.prepare('SELECT codigo FROM examenes_catalogo WHERE codigo = ?').get('CUSTOM01') as {
+        codigo: string
+      }
+      expect(custom.codigo).toBe('CUSTOM01')
+
+      const patient = db.prepare('SELECT cedula FROM pacientes WHERE cedula = ?').get('V-12345678') as {
+        cedula: string
+      }
+      expect(patient.cedula).toBe('V-12345678')
+
+      function tableExists(name: string): boolean {
+        const row = db
+          .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+          .get(name) as { 1: number } | undefined
+        return row !== undefined
+      }
+
+      function columnExists(table: string, column: string): boolean {
+        const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+        return rows.some((row) => row.name === column)
+      }
+
+      const newTables = [
+        'orden_examenes',
+        'pagos',
+        'cuentas_por_cobrar',
+        'abonos',
+        'cierre_caja',
+        'auditoria',
+        'medicos_referentes',
+        'empresas',
+        'muestras',
+        'bcv_historial',
+      ]
+      for (const table of newTables) {
+        expect(tableExists(table), `expected table ${table} to exist`).toBe(true)
+      }
+
+      expect(columnExists('examenes_catalogo', 'tercerizado')).toBe(true)
+      expect(columnExists('examenes_catalogo', 'proveedor')).toBe(true)
+      expect(columnExists('parametros_examen', 'tipo_resultado')).toBe(true)
+      expect(columnExists('parametros_examen', 'opciones_cualitativas')).toBe(true)
+      expect(columnExists('valores_referencia', 'edad_unidad')).toBe(true)
+      expect(columnExists('valores_referencia', 'valor_min_critico')).toBe(true)
+      expect(columnExists('valores_referencia', 'valor_max_critico')).toBe(true)
+      expect(columnExists('ordenes', 'medico_id')).toBe(true)
+      expect(columnExists('ordenes', 'empresa_id')).toBe(true)
+      expect(columnExists('ordenes', 'credito')).toBe(true)
+      expect(columnExists('ordenes', 'anulada')).toBe(true)
+      expect(columnExists('ordenes', 'motivo_anulacion')).toBe(true)
+      expect(columnExists('ordenes', 'cerrada')).toBe(true)
+      expect(columnExists('resultados', 'valor_numerico')).toBe(true)
+      expect(columnExists('resultados', 'valor_cualitativo')).toBe(true)
+      expect(columnExists('resultados', 'estatus_validacion')).toBe(true)
+      expect(columnExists('resultados', 'validado_por')).toBe(true)
+      expect(columnExists('resultados', 'validado_en')).toBe(true)
+      expect(columnExists('resultados', 'flag')).toBe(true)
+      expect(columnExists('resultados', 'comentario')).toBe(true)
+      expect(columnExists('usuarios', 'ultimo_acceso_en')).toBe(true)
+      expect(columnExists('usuarios', 'intentos_fallidos')).toBe(true)
+      expect(columnExists('usuarios', 'bloqueado_hasta')).toBe(true)
+      expect(columnExists('usuarios', 'debe_cambiar_clave')).toBe(true)
+      expect(columnExists('pacientes', 'activo')).toBe(true)
+    } finally {
+      db.close()
+    }
+  })
 })
