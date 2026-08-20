@@ -17,6 +17,7 @@ describe('config repository', () => {
   it('sets and gets lab config', () => {
     const saved = setLabConfig(testDb.db, {
       nombre: 'Lab Test',
+      rif: 'J-12345678-9',
       direccion: 'Av. Test',
       sede: 'Principal',
       telefono: '0212-1234567',

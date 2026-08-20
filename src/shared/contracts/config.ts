@@ -4,6 +4,7 @@ import { envelopeSchema } from './errors'
 
 export const labConfigSchema = z.object({
   nombre: z.string().min(1),
+  rif: z.string().nullable(),
   direccion: z.string().nullable(),
   sede: z.string().nullable(),
   telefono: phoneSchema.nullable(),

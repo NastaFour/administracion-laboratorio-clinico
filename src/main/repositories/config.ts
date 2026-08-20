@@ -22,6 +22,7 @@ export function setConfigValue(db: Database.Database, clave: string, valor: stri
 
 const LAB_CONFIG_KEYS: Record<keyof LabConfig, string> = {
   nombre: 'lab_nombre',
+  rif: 'lab_rif',
   direccion: 'lab_direccion',
   sede: 'lab_sede',
   telefono: 'lab_telefono',
@@ -32,6 +33,7 @@ const LAB_CONFIG_KEYS: Record<keyof LabConfig, string> = {
 export function getLabConfig(db: Database.Database): LabConfig {
   return {
     nombre: getConfigValue(db, LAB_CONFIG_KEYS.nombre) ?? '',
+    rif: getConfigValue(db, LAB_CONFIG_KEYS.rif),
     direccion: getConfigValue(db, LAB_CONFIG_KEYS.direccion),
     sede: getConfigValue(db, LAB_CONFIG_KEYS.sede),
     telefono: getConfigValue(db, LAB_CONFIG_KEYS.telefono),

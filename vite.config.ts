@@ -9,6 +9,13 @@ const alias = {
   '@': path.resolve(__dirname, './src'),
 }
 
+/**
+ * Static assets copied next to the electron bundles (dist-electron/): the WU10
+ * PDF report template + locally bundled IBM Plex Sans fonts. At runtime the
+ * offscreen window loads `report.html` via loadFile relative to __dirname.
+ */
+const reportPublicDir = path.resolve(__dirname, 'src/main/services/pdf/template')
+
 export default defineConfig({
   plugins: [
     tailwindcss(),
@@ -20,6 +27,7 @@ export default defineConfig({
           args.startup()
         },
         vite: {
+          publicDir: reportPublicDir,
           resolve: { alias },
           build: {
             outDir: 'dist-electron',
@@ -41,6 +49,7 @@ export default defineConfig({
           args.reload()
         },
         vite: {
+          publicDir: reportPublicDir,
           resolve: { alias },
           build: {
             outDir: 'dist-electron',

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte de resultados</title>
+  <link rel="stylesheet" href="report.css" />
+</head>
+<body>
+  <div id="marca-copia" class="marca-copia" hidden aria-hidden="true">COPIA</div>
+
+  <header class="encabezado">
+    <img id="logo" class="logo" alt="Logo del laboratorio" hidden />
+    <div class="lab-info">
+      <h1 id="lab-nombre" class="lab-nombre"></h1>
+      <p id="lab-rif" class="lab-dato" hidden></p>
+      <p id="lab-direccion" class="lab-dato" hidden></p>
+      <p id="lab-sede" class="lab-dato" hidden></p>
+      <p id="lab-telefono" class="lab-dato" hidden></p>
+    </div>
+  </header>
+
+  <h2 class="titulo-reporte">Reporte de resultados</h2>
+
+  <section class="bloque orden" aria-label="Datos de la orden">
+    <p><strong>Nº de orden:</strong> <span id="orden-id"></span></p>
+    <p><strong>Fecha:</strong> <span id="orden-fecha"></span></p>
+    <p id="orden-observaciones" hidden><strong>Observaciones:</strong> <span id="orden-observaciones-texto"></span></p>
+  </section>
+
+  <section class="bloque paciente" aria-label="Datos del paciente">
+    <p><strong>Paciente:</strong> <span id="paciente-nombre"></span></p>
+    <p><strong>Cédula:</strong> <span id="paciente-cedula"></span></p>
+    <p><strong>Sexo:</strong> <span id="paciente-sexo"></span></p>
+    <p><strong>Edad:</strong> <span id="paciente-edad"></span></p>
+    <p><strong>F. de nacimiento:</strong> <span id="paciente-fecha-nacimiento"></span></p>
+  </section>
+
+  <section id="medico" class="bloque medico" aria-label="Médico referente" hidden>
+    <p><strong>Médico referente:</strong> <span id="medico-nombre"></span></p>
+    <p id="medico-especialidad" hidden><strong>Especialidad:</strong> <span id="medico-especialidad-texto"></span></p>
+  </section>
+
+  <main id="examenes"></main>
+
+  <section class="bloque firma" aria-label="Firma del bioanalista">
+    <p id="bio-nombre" class="bio-nombre"></p>
+    <p id="bio-titulo" class="bio-dato" hidden></p>
+    <p id="bio-registros" class="bio-dato" hidden></p>
+    <img id="bio-firma" class="bio-firma" alt="Firma" hidden />
+    <div class="linea-firma"></div>
+    <p class="etiqueta-firma">Firma del Bioanalista</p>
+  </section>
+
+  <footer class="pie">
+    <p id="generado-en"></p>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict'
+
+      var FLAG_LABELS = { bajo: 'BAJO', alto: 'ALTO', critico: 'CRÍTICO' }
+
+      function decodeBase64Url(str) {
+        var b64 = str.replace(/-/g, '+').replace(/_/g, '/')
+        var padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4)
+        var bin = atob(padded)
+        var bytes = new Uint8Array(bin.length)
+        for (var i = 0; i < bin.length; i++) {
+          bytes[i] = bin.charCodeAt(i)
+        }
+        return new TextDecoder('utf-8').decode(bytes)
+      }
+
+      function byId(id) {
+        return document.getElementById(id)
+      }
+
+      function setText(id, value) {
+        var node = byId(id)
+        if (node) {
+          node.textContent = value
+        }
+      }
+
+      function showIf(id, value) {
+        var node = byId(id)
+        if (!node) return
+        node.hidden = !value
+        return node
+      }
+
+      function el(tag, className, text) {
+        var node = document.createElement(tag)
+        if (className) {
+          node.className = className
+        }
+        if (text !== undefined && text !== null) {
+          node.textContent = String(text)
+        }
+        return node
+      }
+
+      function renderResultRow(row) {
+        var tr = el('tr', 'fila-resultado')
+        var tdAnalisis = el('td', 'analisis')
+        tdAnalisis.appendChild(el('div', 'analisis-nombre', row.analisis))
+        if (row.comentario) {
+          tdAnalisis.appendChild(el('div', 'comentario', 'Comentario: ' + row.comentario))
+        }
+        tr.appendChild(tdAnalisis)
+        tr.appendChild(el('td', 'valor', row.resultado))
+        tr.appendChild(el('td', 'unidad', row.unidad || ''))
+        tr.appendChild(el('td', 'referencia', row.referencia || ''))
+        var tdFlag = el('td', 'flag')
+        if (row.flag) {
+          var badge = el('span', 'bandera bandera-' + row.flag, FLAG_LABELS[row.flag] || row.flag)
+          tdFlag.appendChild(badge)
+        }
+        tr.appendChild(tdFlag)
+        return tr
+      }
+
+      function renderExam(exam) {
+        var section = el('section', 'examen')
+        section.appendChild(el('h3', 'examen-titulo', exam.nombre))
+        if (exam.tipoMuestra) {
+          section.appendChild(el('p', 'examen-muestra', 'Muestra: ' + exam.tipoMuestra))
+        }
+        var table = el('table', 'tabla-resultados')
+        var thead = el('thead')
+        var headRow = el('tr')
+        ;['Análisis', 'Resultado', 'Unidad', 'Referencia', 'Flag'].forEach(function (label) {
+          headRow.appendChild(el('th', null, label))
+        })
+        thead.appendChild(headRow)
+        table.appendChild(thead)
+        var tbody = el('tbody')
+        exam.resultados.forEach(function (row) {
+          tbody.appendChild(renderResultRow(row))
+        })
+        table.appendChild(tbody)
+        section.appendChild(table)
+        return section
+      }
+
+      var payload = ''
+      try {
+        var params = new URLSearchParams(window.location.search)
+        payload = params.get('payload') || ''
+        var data = JSON.parse(decodeBase64Url(payload))
+      } catch (err) {
+        document.body.appendChild(el('p', 'error-payload', 'No se pudo cargar el reporte.'))
+        return
+      }
+
+      if (data.copia) {
+        byId('marca-copia').hidden = false
+      }
+
+      if (data.header) {
+        if (data.header.logo) {
+          var logo = byId('logo')
+          logo.src = data.header.logo
+          logo.hidden = false
+        }
+        setText('lab-nombre', data.header.nombre || '')
+        showIf('lab-rif', data.header.rif).textContent = 'RIF: ' + data.header.rif
+        showIf('lab-direccion', data.header.direccion).textContent = data.header.direccion
+        showIf('lab-sede', data.header.sede).textContent = data.header.sede
+        showIf('lab-telefono', data.header.telefono).textContent = 'Teléfono: ' + data.header.telefono
+      }
+
+      if (data.orden) {
+        setText('orden-id', '#' + data.orden.id)
+        setText('orden-fecha', data.orden.fecha || '')
+        if (data.orden.observaciones) {
+          byId('orden-observaciones').hidden = false
+          setText('orden-observaciones-texto', data.orden.observaciones)
+        }
+      }
+
+      if (data.paciente) {
+        setText('paciente-nombre', data.paciente.nombreCompleto || '')
+        setText('paciente-cedula', data.paciente.cedula || '')
+        setText('paciente-sexo', data.paciente.sexo || '')
+        setText('paciente-edad', data.paciente.edad || '')
+        setText('paciente-fecha-nacimiento', data.paciente.fechaNacimiento || '')
+      }
+
+      if (data.medicoReferente) {
+        byId('medico').hidden = false
+        setText('medico-nombre', data.medicoReferente.nombre)
+        if (data.medicoReferente.especialidad) {
+          byId('medico-especialidad').hidden = false
+          setText('medico-especialidad-texto', data.medicoReferente.especialidad)
+        }
+      }
+
+      var examenesNode = byId('examenes')
+      ;(data.examenes || []).forEach(function (exam) {
+        examenesNode.appendChild(renderExam(exam))
+      })
+
+      if (data.bioanalista) {
+        setText('bio-nombre', data.bioanalista.nombre || '')
+        showIf('bio-titulo', data.bioanalista.titulo).textContent = data.bioanalista.titulo
+        var registros = [data.bioanalista.registro_msds, data.bioanalista.registro_cbz]
+          .filter(function (registro) {
+            return registro
+          })
+          .join(' / ')
+        showIf('bio-registros', registros).textContent = registros
+        if (data.bioanalista.firma && data.bioanalista.firma.indexOf('data:image/') === 0) {
+          var firma = byId('bio-firma')
+          firma.src = data.bioanalista.firma
+          firma.hidden = false
+        }
+      }
+
+      if (data.generadoEn) {
+        var fecha = new Date(data.generadoEn)
+        var texto =
+          'Generado el ' +
+          ('0' + fecha.getDate()).slice(-2) +
+          '/' +
+          ('0' + (fecha.getMonth() + 1)).slice(-2) +
+          '/' +
+          fecha.getFullYear()
+        setText('generado-en', texto)
+      }
+    })()
+  </script>
+</body>
+</html>
