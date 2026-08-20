@@ -4,7 +4,7 @@
  * capture (WU9) and report building (WU10).
  */
 
-import { FLAG, type AgeUnit, type Flag, type ReferenceRange, type Sex } from '@/shared/contracts'
+import { AGE_UNIT, FLAG, type AgeUnit, type Flag, type ReferenceRange, type Sex } from '@/shared/contracts'
 
 export interface ExactAge {
   days: number
@@ -84,6 +84,43 @@ export function selectBand(
 
   const sexSpecific = matches.find((band) => band.sexo === sex)
   return sexSpecific ?? matches[0] ?? null
+}
+
+/**
+ * Select the band that matches the patient's exact age, trying every age unit
+ * present in the band set. Finer units (days/months) are preferred for patients
+ * under one year so neonate/infant bands win over adult ones; years are tried
+ * first for older patients. Falls back to `selectBand` semantics per unit.
+ */
+export function selectBandForExactAge(
+  bands: ReferenceRange[],
+  sex: Sex,
+  exactAge: ExactAge,
+): ReferenceRange | null {
+  const units = [...new Set(bands.map((band) => band.edad_unidad))]
+  if (units.length === 0) {
+    return null
+  }
+
+  const preferFineUnits = exactAge.years === 0
+  const unitOrder: Record<AgeUnit, number> = {
+    [AGE_UNIT.DIAS]: 0,
+    [AGE_UNIT.MESES]: 1,
+    [AGE_UNIT.ANIOS]: 2,
+  }
+  units.sort((a, b) => {
+    const diff = unitOrder[a] - unitOrder[b]
+    return preferFineUnits ? diff : -diff
+  })
+
+  for (const unit of units) {
+    const age = unit === AGE_UNIT.DIAS ? exactAge.days : unit === AGE_UNIT.MESES ? exactAge.months : exactAge.years
+    const band = selectBand(bands, sex, unit, age)
+    if (band) {
+      return band
+    }
+  }
+  return null
 }
 
 /**

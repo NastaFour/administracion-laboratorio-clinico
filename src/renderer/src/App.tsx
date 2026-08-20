@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Users, LogOut, Beaker, FlaskConical, Settings, FileText, Stethoscope, TestTube } from 'lucide-react'
+import { Users, LogOut, Beaker, FlaskConical, Settings, FileText, Stethoscope, TestTube, ClipboardList } from 'lucide-react'
 import { Login } from './features/auth/Login'
 import { LockScreen } from './features/auth/LockScreen'
 import { PatientsPage } from './features/patients/PatientsPage'
@@ -7,10 +7,11 @@ import { CatalogPage } from './features/catalog/CatalogPage'
 import { OrdersPage } from './features/orders/OrdersPage'
 import { MedicosPage } from './features/medicos/MedicosPage'
 import { SamplingPage } from './features/sampling/SamplingPage'
+import { CapturePage } from './features/results/Capture'
 import { useSessionStore } from './stores/useSessionStore'
 import { cn } from './lib/cn'
 
-type Tab = 'patients' | 'catalog' | 'orders' | 'medicos' | 'sampling' | 'settings'
+type Tab = 'patients' | 'catalog' | 'orders' | 'medicos' | 'sampling' | 'results' | 'settings'
 
 function App() {
   const { session, locked, restore, resetIdle, logout } = useSessionStore()
@@ -92,6 +93,12 @@ function App() {
             onClick={() => setActiveTab('sampling')}
           />
           <NavItem
+            icon={ClipboardList}
+            label="Resultados"
+            active={activeTab === 'results'}
+            onClick={() => setActiveTab('results')}
+          />
+          <NavItem
             icon={Settings}
             label="Configuración"
             active={activeTab === 'settings'}
@@ -123,6 +130,7 @@ function App() {
         {activeTab === 'orders' && <OrdersPage />}
         {activeTab === 'medicos' && <MedicosPage />}
         {activeTab === 'sampling' && <SamplingPage />}
+        {activeTab === 'results' && <CapturePage />}
         {activeTab === 'settings' && (
           <div className="rounded-lg border border-paper-200 bg-paper-50 p-8 text-center">
             <p className="text-ink-500">Configuración disponible en próxima entrega.</p>

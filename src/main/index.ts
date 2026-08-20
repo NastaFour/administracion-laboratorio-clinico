@@ -12,6 +12,7 @@ import { registerCatalogHandlers } from './ipc/catalog.ipc'
 import { registerMedicosHandlers } from './ipc/medicos.ipc'
 import { registerOrdersHandlers } from './ipc/orders.ipc'
 import { registerSamplesHandlers } from './ipc/samples.ipc'
+import { registerResultsHandlers } from './ipc/results.ipc'
 import { configureGuardDependencies } from './ipc/register'
 import { getSession } from './services/auth'
 import { writeAudit } from './services/audit'
@@ -42,6 +43,7 @@ async function bootstrap(): Promise<void> {
   registerMedicosHandlers(db)
   registerOrdersHandlers(db)
   registerSamplesHandlers(db)
+  registerResultsHandlers(db)
 }
 
 app.whenReady().then(async () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AGE_UNIT, FLAG, SEX, type ReferenceRange } from '@/shared/contracts'
-import { computeExactAge, computeFlag, selectBand } from './referenceRanges'
+import { computeExactAge, computeFlag, selectBand, selectBandForExactAge } from './referenceRanges'
 
 function makeRange(overrides: Partial<ReferenceRange> = {}): ReferenceRange {
   return {
@@ -178,6 +178,61 @@ describe('selectBand', () => {
   it('does not mix age units', () => {
     const bands = [makeRange({ id: 1, edad_unidad: AGE_UNIT.MESES, edad_min: 1, edad_max: 12 })]
     expect(selectBand(bands, SEX.MALE, AGE_UNIT.DIAS, 15)).toBeNull()
+  })
+})
+
+describe('selectBandForExactAge', () => {
+  it('RED: a male aged 35 gets the male-adult band ONLY', () => {
+    // Multiple candidate bands exist: female adult, neonate (days), male adult.
+    const bands = [
+      makeRange({ id: 1, sexo: SEX.FEMALE, edad_unidad: AGE_UNIT.ANIOS, edad_min: 18, edad_max: 99, valor_min: 12, valor_max: 16 }),
+      makeRange({ id: 2, sexo: 'Ambos', edad_unidad: AGE_UNIT.DIAS, edad_min: 0, edad_max: 28 }),
+      makeRange({ id: 3, sexo: SEX.MALE, edad_unidad: AGE_UNIT.ANIOS, edad_min: 18, edad_max: 99, valor_min: 13.5, valor_max: 17.5 }),
+      makeRange({ id: 4, sexo: 'Ambos', edad_unidad: AGE_UNIT.ANIOS, edad_min: 0, edad_max: 120 }),
+    ]
+    const exactAge = computeExactAge('1990-05-15', '2026-05-15') // 36 years
+    const band = selectBandForExactAge(bands, SEX.MALE, exactAge)
+    expect(band).not.toBeNull()
+    expect(band?.id).toBe(3)
+    expect(band?.sexo).toBe(SEX.MALE)
+    expect(band?.valor_min).toBe(13.5)
+  })
+
+  it('selects a neonate band for a patient under a year when days are available', () => {
+    const bands = [
+      makeRange({ id: 1, sexo: 'Ambos', edad_unidad: AGE_UNIT.ANIOS, edad_min: 0, edad_max: 120 }),
+      makeRange({ id: 2, sexo: 'Ambos', edad_unidad: AGE_UNIT.DIAS, edad_min: 0, edad_max: 30 }),
+    ]
+    const exactAge = computeExactAge('2026-08-07', '2026-08-19') // 12 days
+    expect(selectBandForExactAge(bands, SEX.FEMALE, exactAge)?.id).toBe(2)
+  })
+
+  it('selects an infant band by months before falling back to years', () => {
+    const bands = [
+      makeRange({ id: 1, sexo: 'Ambos', edad_unidad: AGE_UNIT.ANIOS, edad_min: 0, edad_max: 120 }),
+      makeRange({ id: 2, sexo: 'Ambos', edad_unidad: AGE_UNIT.MESES, edad_min: 1, edad_max: 12 }),
+    ]
+    const exactAge = computeExactAge('2026-06-19', '2026-08-19') // 2 months
+    expect(selectBandForExactAge(bands, SEX.MALE, exactAge)?.id).toBe(2)
+  })
+
+  it('returns null when no band matches any unit', () => {
+    const bands = [makeRange({ id: 1, sexo: 'Ambos', edad_unidad: AGE_UNIT.ANIOS, edad_min: 18, edad_max: 99 })]
+    const exactAge = computeExactAge('2020-01-01', '2021-01-01') // 1 year
+    expect(selectBandForExactAge(bands, SEX.MALE, exactAge)).toBeNull()
+  })
+
+  it('returns null for an empty band set', () => {
+    expect(selectBandForExactAge([], SEX.MALE, computeExactAge('1990-01-01', '2026-01-01'))).toBeNull()
+  })
+
+  it('ignores inactive bands when selecting by exact age', () => {
+    const bands = [
+      makeRange({ id: 1, activo: false, sexo: SEX.MALE, edad_unidad: AGE_UNIT.ANIOS, edad_min: 18, edad_max: 99 }),
+      makeRange({ id: 2, activo: true, sexo: 'Ambos', edad_unidad: AGE_UNIT.ANIOS, edad_min: 18, edad_max: 99 }),
+    ]
+    const exactAge = computeExactAge('1990-01-01', '2026-01-01')
+    expect(selectBandForExactAge(bands, SEX.MALE, exactAge)?.id).toBe(2)
   })
 })
 

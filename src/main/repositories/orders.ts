@@ -24,6 +24,7 @@ export function rowToOrder(row: Record<string, unknown>): Order {
 
 export function rowToOrderExam(row: Record<string, unknown>): OrderExam {
   return {
+    id: row.id as number,
     examen_id: row.examen_id as number,
     precio: row.precio as number,
     tercerizado: toBoolean(row.tercerizado as number | null | undefined),
@@ -34,9 +35,32 @@ export function rowToOrderExam(row: Record<string, unknown>): OrderExam {
 
 function loadExams(db: Database.Database, orderId: number): OrderExam[] {
   const rows = db
-    .prepare('SELECT examen_id, precio, tercerizado, proveedor, comentario FROM orden_examenes WHERE orden_id = ?')
+    .prepare(
+      'SELECT id, examen_id, precio, tercerizado, proveedor, comentario FROM orden_examenes WHERE orden_id = ?',
+    )
     .all(orderId) as Array<Record<string, unknown>>
   return rows.map(rowToOrderExam)
+}
+
+/**
+ * Resolve a single orden_examenes row together with its owning order's patient,
+ * so result capture can compute the correct sex/age reference band.
+ */
+export function getOrderExam(
+  db: Database.Database,
+  id: number,
+): { id: number; orden_id: number; examen_id: number; paciente_id: number } | null {
+  const row = db
+    .prepare(
+      `SELECT oe.id, oe.orden_id, oe.examen_id, o.paciente_id
+       FROM orden_examenes oe
+       JOIN ordenes o ON o.id = oe.orden_id
+       WHERE oe.id = ?`,
+    )
+    .get(id) as
+    | { id: number; orden_id: number; examen_id: number; paciente_id: number }
+    | undefined
+  return row ?? null
 }
 
 function toOrderWithExams(db: Database.Database, row: Record<string, unknown>): OrderWithExams {

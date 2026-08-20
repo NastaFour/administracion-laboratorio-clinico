@@ -11,6 +11,10 @@ export const orderStatusSchema = z.enum([
 ])
 
 export const orderExamSchema = z.object({
+  // id is the orden_examenes junction row id. Optional on input (creation omits
+  // it); always populated by the repository on output so the renderer can target
+  // a specific exam in an order for result capture.
+  id: idSchema.optional(),
   examen_id: idSchema,
   precio: positiveMoneySchema,
   tercerizado: z.boolean().default(false),

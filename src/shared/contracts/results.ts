@@ -19,6 +19,24 @@ export const captureValueSchema = z.union([
 
 export type CaptureValue = z.infer<typeof captureValueSchema>
 
+/**
+ * Snapshot of an existing result for a parameter, attached to each entry of
+ * `results:paramsForCapture` so the capture screen shows the main-computed flag
+ * and validation state without a separate list channel.
+ */
+export const paramResultSummarySchema = z.object({
+  id: idSchema,
+  estatus_validacion: resultStatusSchema,
+  valor_numerico: z.number().nullable(),
+  valor_cualitativo: z.string().nullable(),
+  flag: flagSchema.nullable(),
+  validado_por: idSchema.nullable(),
+  comentario: z.string().nullable(),
+  motivo_rechazo: z.string().nullable(),
+})
+
+export type ParamResultSummary = z.infer<typeof paramResultSummarySchema>
+
 export const paramForCaptureSchema = z.object({
   parametro_id: idSchema,
   nombre: z.string().min(1),
@@ -26,6 +44,7 @@ export const paramForCaptureSchema = z.object({
   tipo_resultado: z.enum([RESULT_TYPE.NUMERICO, RESULT_TYPE.CUALITATIVO]),
   opciones_cualitativas: z.array(z.string()).nullable(),
   banda: referenceRangeSchema.nullable(),
+  resultado: paramResultSummarySchema.nullable(),
 })
 
 export type ParamForCapture = z.infer<typeof paramForCaptureSchema>
@@ -41,6 +60,7 @@ export const resultSchema = z.object({
   validado_en: z.string().datetime().nullable(),
   flag: flagSchema.nullable(),
   comentario: z.string().nullable(),
+  motivo_rechazo: z.string().nullable(),
 })
 
 export type Result = z.infer<typeof resultSchema>
