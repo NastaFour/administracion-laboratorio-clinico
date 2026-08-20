@@ -19,6 +19,9 @@ export function createMainWindow(): BrowserWindow {
     },
   })
 
+  // Never allow the renderer to open arbitrary windows (sandbox posture).
+  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     window.loadURL(process.env.VITE_DEV_SERVER_URL)
     window.webContents.openDevTools()

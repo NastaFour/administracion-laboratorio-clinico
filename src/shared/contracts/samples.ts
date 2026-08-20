@@ -17,6 +17,7 @@ export const sampleSchema = z.object({
   codigo: z.string().min(1),
   estatus: sampleStatusSchema,
   motivo_rechazo: z.string().nullable(),
+  recoleccion_en: z.string().datetime().nullable(),
   creado_en: z.string().datetime(),
 })
 
@@ -24,6 +25,7 @@ export type Sample = z.infer<typeof sampleSchema>
 
 export const registerSamplesRequestSchema = z.object({
   ordenId: idSchema,
+  recoleccion_en: z.string().datetime().optional(),
 })
 
 export type RegisterSamplesRequest = z.infer<typeof registerSamplesRequestSchema>
@@ -31,6 +33,7 @@ export type RegisterSamplesRequest = z.infer<typeof registerSamplesRequestSchema
 export const updateSampleStatusRequestSchema = z.object({
   id: idSchema,
   estatus: sampleStatusSchema,
+  recoleccion_en: z.string().datetime().optional(),
 })
 
 export type UpdateSampleStatusRequest = z.infer<typeof updateSampleStatusRequestSchema>

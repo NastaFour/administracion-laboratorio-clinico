@@ -70,7 +70,7 @@ Chain strategy: pending
 - [x] 2.5 (WU6b) `services/referenceRanges.ts` pure module: `selectBand(sex, ageUnit, ageDays)` + `computeFlag(value, band, criticos)` + `computeExactAge(dob, refDate)` (days/months/years). RED tests for neonate/infant/adult band selection + out-of-range flag (≥80% cov). Files: `services/referenceRanges.ts`, `services/referenceRanges.test.ts`. ~300 LOC.
 - [x] 2.6 (WU7) `repositories/orders.ts` + `ipc/orders.ipc.ts` + `ipc/medicos.ipc.ts`; `orden_examenes` junction; status workflow Pendiente→Procesando→Completada→Entregada; lock-after-Completada. RED: locked order rejects edit. Files: `repositories/orders.ts`, `ipc/{orders,medicos}.ipc.ts`, `features/orders/*`. ~280 LOC.
 - [x] 2.7 (WU7) **Credit authorization channel** `orders:authorizeCredit(ordenId, monto, motivo)` w/ role guard bioanalista|admin only; sets `ordenes.credito=1`; audit. RED: recepcion blocked + audited. Files: `ipc/orders.ipc.ts` (new handler), `services/orders.ts`. ~100 LOC.
-- [ ] 2.8 (WU8) `repositories/samples.ts` + `ipc/samples.ipc.ts` + `features/sampling/{Register,Status,Reject,Label}.tsx`; per-order/exam samples; status Recolectada→En proceso→Resultada (side effect from WU9b); barcode label print (Should). RED: one sample row per exam. Files: `repositories/samples.ts`, `ipc/samples.ipc.ts`, `features/sampling/*`. ~200 LOC.
+- [x] 2.8 (WU8) `repositories/samples.ts` + `ipc/samples.ipc.ts` + `features/sampling/{Register,Status,Reject,Label}.tsx`; per-order/exam samples; status Recolectada→En proceso→Resultada (side effect from WU9b); barcode label print (Should). RED: one sample row per exam. Files: `repositories/samples.ts`, `ipc/samples.ipc.ts`, `features/sampling/*`. ~200 LOC.
 
 ## Phase 3 — Results & Reporting (WU9 → WU10)
 
