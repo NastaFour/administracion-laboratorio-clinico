@@ -1,11 +1,12 @@
 import type Database from 'better-sqlite3'
 import type { Balance, Payment, PaymentMethod, RecordPaymentRequest } from '@/shared/contracts'
 import { toBoolean, toIsoString, toPaymentMethod } from './helpers'
+import { round2 } from '../services/payments'
 
 export function rowToPayment(row: Record<string, unknown>): Payment {
   return {
     id: row.id as number,
-    orden_id: (row.orden_id as number | null | undefined) ?? null,
+    orden_id: row.orden_id as number,
     cuenta_id: (row.cuenta_id as number | null | undefined) ?? null,
     metodo: toPaymentMethod(row.metodo as string),
     monto_bs: row.monto_bs as number,
@@ -33,12 +34,6 @@ export function listPaymentsByOrder(db: Database.Database, ordenId: number): Pay
 }
 
 export function recordPayment(db: Database.Database, input: RecordPaymentRequest & { usuario_id: number }): Payment {
-  // The current DB schema requires orden_id NOT NULL. Credit-account-only
-  // payments (cuenta_id without orden_id) are blocked by this schema and must
-  // be addressed in a follow-up migration.
-  if (input.orden_id === null) {
-    throw new Error('Payments without an order_id are not supported by the current schema')
-  }
   const result = db
     .prepare(
       `INSERT INTO pagos (orden_id, cuenta_id, metodo, monto_bs, monto_usd, tasa_bcv, referencia, fecha, usuario_id)
@@ -50,7 +45,7 @@ export function recordPayment(db: Database.Database, input: RecordPaymentRequest
       input.metodo,
       input.monto_bs,
       input.monto_usd,
-      input.tasa_bcv,
+      input.tasa_bcv ?? 0,
       input.referencia,
       input.fecha,
       input.usuario_id,
@@ -89,12 +84,14 @@ export function getBalance(db: Database.Database, ordenId: number): Balance {
     .get(ordenId) as { pagado_bs: number; pagado_usd: number }
   return {
     orden_id: ordenId,
-    total_bs: totalBs,
-    pagado_bs: pagadoRow.pagado_bs,
-    saldo_bs: Math.max(0, totalBs - pagadoRow.pagado_bs),
+    total_bs: round2(totalBs),
+    pagado_bs: round2(pagadoRow.pagado_bs),
+    saldo_bs: round2(Math.max(0, totalBs - pagadoRow.pagado_bs)),
+    // Orders are priced in Bs only (D7); USD payments already fold their Bs
+    // equivalent into monto_bs, so there is no USD-denominated order balance.
     total_usd: 0,
-    pagado_usd: pagadoRow.pagado_usd,
-    saldo_usd: Math.max(0, -pagadoRow.pagado_usd),
+    pagado_usd: round2(pagadoRow.pagado_usd),
+    saldo_usd: 0,
   }
 }
 

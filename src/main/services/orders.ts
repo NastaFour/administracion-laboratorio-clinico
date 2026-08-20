@@ -2,6 +2,8 @@ import type Database from 'better-sqlite3'
 import type { CreateOrderRequest, Order, OrderStatus, OrderWithExams, Session, UpdateOrderRequest } from '@/shared/contracts'
 import { ERROR_CODES, ORDER_STATUS } from '@/shared/contracts'
 import { writeAudit } from './audit'
+import { assertDeliverable } from './payments'
+import { getBalance } from '../repositories/payments'
 import {
   createOrder,
   getOrder,
@@ -106,6 +108,9 @@ export async function deliverOrderService(db: Database.Database, id: number, ses
   if (before.estatus !== ORDER_STATUS.COMPLETADA) {
     throw new Error(ERROR_CODES.CONFLICT)
   }
+  // Delivery-block gate (D5 / M9.7): blocked while a balance is pending,
+  // except for authorized credit accounts (ordenes.credito = 1).
+  assertDeliverable(before, getBalance(db, id))
   updateOrderStatus(db, id, ORDER_STATUS.ENTREGADA)
   setOrderCerrada(db, id, true)
   const order = requireOrder(db, id)

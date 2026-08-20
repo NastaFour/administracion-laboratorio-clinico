@@ -9,8 +9,9 @@ import {
   voidOrderService,
 } from './orders'
 import { setOrderCerrada } from '../repositories/orders'
+import { recordPayment } from '../repositories/payments'
 import type { Session } from '@/shared/contracts'
-import { ERROR_CODES, ORDER_STATUS } from '@/shared/contracts'
+import { ERROR_CODES, ORDER_STATUS, PAYMENT_METHOD } from '@/shared/contracts'
 
 const fakeSession = (role: Session['rol'] = 'admin', userId = 1): Session => ({
   userId,
@@ -145,6 +146,61 @@ describe('orders service', () => {
 
     await advanceOrderStatusService(testDb.db, created.id, fakeSession())
     await advanceOrderStatusService(testDb.db, created.id, fakeSession())
+    // Settle the balance so the delivery-block gate (M9.7) permits delivery.
+    recordPayment(testDb.db, {
+      orden_id: created.id,
+      cuenta_id: null,
+      metodo: PAYMENT_METHOD.EFECTIVO,
+      monto_bs: 100,
+      monto_usd: 0,
+      referencia: null,
+      fecha: '2026-08-18',
+      usuario_id: 1,
+    })
+    const delivered = await deliverOrderService(testDb.db, created.id, fakeSession())
+    expect(delivered.estatus).toBe(ORDER_STATUS.ENTREGADA)
+  })
+
+  it('RED: blocks delivery while a balance is pending (not on credit)', async () => {
+    const patient = createPatient(testDb.db, 'V-20000007')
+    const exam = createExam(testDb.db, 'EXM17', 100)
+    const created = await createOrderService(
+      testDb.db,
+      {
+        paciente_id: patient,
+        medico_id: null,
+        empresa_id: null,
+        examenes: [{ examen_id: exam, precio: 100, tercerizado: false, proveedor: null, comentario: null }],
+        observaciones: null,
+      },
+      fakeSession(),
+    )
+    await advanceOrderStatusService(testDb.db, created.id, fakeSession())
+    await advanceOrderStatusService(testDb.db, created.id, fakeSession())
+
+    await expect(deliverOrderService(testDb.db, created.id, fakeSession())).rejects.toThrow(
+      ERROR_CODES.PENDING_BALANCE,
+    )
+  })
+
+  it('RED: an authorized credit account delivers despite an open balance', async () => {
+    const patient = createPatient(testDb.db, 'V-20000008')
+    const exam = createExam(testDb.db, 'EXM18', 100)
+    const created = await createOrderService(
+      testDb.db,
+      {
+        paciente_id: patient,
+        medico_id: null,
+        empresa_id: null,
+        examenes: [{ examen_id: exam, precio: 100, tercerizado: false, proveedor: null, comentario: null }],
+        observaciones: null,
+      },
+      fakeSession(),
+    )
+    await authorizeOrderCreditService(testDb.db, created.id, 100, 'Paciente habitual', fakeSession('bioanalista'))
+    await advanceOrderStatusService(testDb.db, created.id, fakeSession())
+    await advanceOrderStatusService(testDb.db, created.id, fakeSession())
+
     const delivered = await deliverOrderService(testDb.db, created.id, fakeSession())
     expect(delivered.estatus).toBe(ORDER_STATUS.ENTREGADA)
   })

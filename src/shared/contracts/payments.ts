@@ -13,7 +13,7 @@ export const paymentMethodSchema = z.enum([
 
 export const paymentSchema = z.object({
   id: idSchema,
-  orden_id: idSchema.nullable(),
+  orden_id: idSchema,
   cuenta_id: idSchema.nullable(),
   metodo: paymentMethodSchema,
   monto_bs: positiveMoneySchema,
@@ -30,12 +30,12 @@ export const paymentSchema = z.object({
 export type Payment = z.infer<typeof paymentSchema>
 
 export const recordPaymentRequestSchema = z.object({
-  orden_id: idSchema.nullable(),
-  cuenta_id: idSchema.nullable(),
+  orden_id: idSchema,
+  cuenta_id: idSchema.nullable().default(null),
   metodo: paymentMethodSchema,
   monto_bs: positiveMoneySchema.default(0),
   monto_usd: positiveMoneySchema.default(0),
-  tasa_bcv: positiveMoneySchema,
+  tasa_bcv: positiveMoneySchema.optional(),
   referencia: z.string().nullable().default(null),
   fecha: isoDateOnlySchema,
 })
@@ -66,6 +66,7 @@ export const cierreSchema = z.object({
   total_bs: positiveMoneySchema,
   total_usd: positiveMoneySchema,
   tasa_bcv: positiveMoneySchema,
+  tasa_actualizado_en: z.string().datetime().nullable(),
   usuario_id: idSchema,
   creado_en: z.string().datetime(),
   detalle_por_metodo: z.record(z.string(), z.object({ bs: positiveMoneySchema, usd: positiveMoneySchema })),
