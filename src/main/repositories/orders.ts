@@ -95,7 +95,14 @@ export function listOrders(db: Database.Database, filters: OrderFilters = {}): O
     values.push(filters.hasta)
   }
   if (filters.pendientePago !== undefined) {
-    conditions.push(filters.pendientePago ? "estatus_pago = 'Pendiente'" : "estatus_pago = 'Pagado'")
+    // The real payment state comes from the payments ledger (WU11), not the
+    // `estatus_pago` column, which is only a creation-time default and is
+    // never maintained afterwards. Pendiente = outstanding balance > 0.
+    conditions.push(
+      filters.pendientePago
+        ? `(SELECT COALESCE(SUM(monto_bs), 0) FROM pagos pg WHERE pg.orden_id = ordenes.id AND pg.anulado = 0) < precio_total`
+        : `(SELECT COALESCE(SUM(monto_bs), 0) FROM pagos pg WHERE pg.orden_id = ordenes.id AND pg.anulado = 0) >= precio_total`,
+    )
   }
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
   const rows = db

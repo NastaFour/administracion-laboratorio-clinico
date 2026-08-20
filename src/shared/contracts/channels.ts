@@ -139,6 +139,7 @@ export const CHANNEL_ALLOWLIST = Object.freeze([
   'dashboard:debtors',
   'dashboard:stats',
   'dashboard:trends',
+  'dashboard:patientAnalytes',
 ] as const)
 
 export type ChannelName = (typeof CHANNEL_ALLOWLIST)[number]

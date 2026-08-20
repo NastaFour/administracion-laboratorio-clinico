@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Users, LogOut, Beaker, FlaskConical, Settings, FileText, Stethoscope, TestTube, ClipboardList, Wallet, Calculator } from 'lucide-react'
+import { Users, LogOut, Beaker, FlaskConical, Settings, FileText, Stethoscope, TestTube, ClipboardList, Wallet, Calculator, LayoutDashboard, History } from 'lucide-react'
 import { Login } from './features/auth/Login'
 import { LockScreen } from './features/auth/LockScreen'
 import { PatientsPage } from './features/patients/PatientsPage'
@@ -10,10 +10,12 @@ import { SamplingPage } from './features/sampling/SamplingPage'
 import { CapturePage } from './features/results/Capture'
 import { PaymentsPage } from './features/payments/PaymentsPage'
 import { CierrePage } from './features/cierre/CierrePage'
+import { DashboardPage } from './features/dashboard/DashboardPage'
+import { HistoryPage } from './features/history/HistoryPage'
 import { useSessionStore } from './stores/useSessionStore'
 import { cn } from './lib/cn'
 
-type Tab = 'patients' | 'catalog' | 'orders' | 'medicos' | 'sampling' | 'results' | 'payments' | 'cierre' | 'settings'
+type Tab = 'dashboard' | 'patients' | 'catalog' | 'orders' | 'medicos' | 'sampling' | 'results' | 'payments' | 'cierre' | 'history' | 'settings'
 
 function App() {
   const { session, locked, restore, resetIdle, logout } = useSessionStore()
@@ -65,6 +67,12 @@ function App() {
 
         <nav className="flex-1 p-4 space-y-1">
           <NavItem
+            icon={LayoutDashboard}
+            label="Panel"
+            active={activeTab === 'dashboard'}
+            onClick={() => setActiveTab('dashboard')}
+          />
+          <NavItem
             icon={Users}
             label="Pacientes"
             active={activeTab === 'patients'}
@@ -113,6 +121,12 @@ function App() {
             onClick={() => setActiveTab('cierre')}
           />
           <NavItem
+            icon={History}
+            label="Historial"
+            active={activeTab === 'history'}
+            onClick={() => setActiveTab('history')}
+          />
+          <NavItem
             icon={Settings}
             label="Configuración"
             active={activeTab === 'settings'}
@@ -139,6 +153,7 @@ function App() {
       </aside>
 
       <main className="flex-1 p-6 overflow-auto">
+        {activeTab === 'dashboard' && <DashboardPage />}
         {activeTab === 'patients' && <PatientsPage />}
         {activeTab === 'catalog' && <CatalogPage />}
         {activeTab === 'orders' && <OrdersPage />}
@@ -147,6 +162,7 @@ function App() {
         {activeTab === 'results' && <CapturePage />}
         {activeTab === 'payments' && <PaymentsPage />}
         {activeTab === 'cierre' && <CierrePage />}
+        {activeTab === 'history' && <HistoryPage />}
         {activeTab === 'settings' && (
           <div className="rounded-lg border border-paper-200 bg-paper-50 p-8 text-center">
             <p className="text-ink-500">Configuración disponible en próxima entrega.</p>

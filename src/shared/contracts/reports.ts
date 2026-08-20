@@ -21,7 +21,9 @@ export const reportsChannels = {
     response: envelopeSchema(z.void()),
   },
   'reports:savePdf': {
-    request: reportRequestSchema.extend({ filePath: z.string().min(1) }),
+    // filePath is optional: when omitted the main process shows the native
+    // save dialog (WU12 history re-export).
+    request: reportRequestSchema.extend({ filePath: z.string().min(1).optional() }),
     response: envelopeSchema(z.void()),
   },
 } as const

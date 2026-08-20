@@ -66,6 +66,14 @@ export const trendSchema = z.object({
 
 export type Trend = z.infer<typeof trendSchema>
 
+export const patientAnalyteSchema = z.object({
+  parametro_id: idSchema,
+  parametro_nombre: z.string(),
+  unidad: z.string().nullable(),
+})
+
+export type PatientAnalyte = z.infer<typeof patientAnalyteSchema>
+
 export const dashboardChannels = {
   'dashboard:today': {
     request: z.object({ fecha: isoDateOnlySchema.optional() }),
@@ -82,6 +90,10 @@ export const dashboardChannels = {
   'dashboard:trends': {
     request: z.object({ pacienteId: idSchema, parametroId: idSchema }),
     response: envelopeSchema(trendSchema),
+  },
+  'dashboard:patientAnalytes': {
+    request: z.object({ pacienteId: idSchema }),
+    response: envelopeSchema(z.array(patientAnalyteSchema)),
   },
 } as const
 

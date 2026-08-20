@@ -125,6 +125,7 @@ export interface LabCoreAPI {
     debtors: (req: RequestOf<IpcChannels['dashboard:debtors']>) => Promise<ResponseOf<IpcChannels['dashboard:debtors']>>
     stats: (req: RequestOf<IpcChannels['dashboard:stats']>) => Promise<ResponseOf<IpcChannels['dashboard:stats']>>
     trends: (req: RequestOf<IpcChannels['dashboard:trends']>) => Promise<ResponseOf<IpcChannels['dashboard:trends']>>
+    patientAnalytes: (req: RequestOf<IpcChannels['dashboard:patientAnalytes']>) => Promise<ResponseOf<IpcChannels['dashboard:patientAnalytes']>>
   }
 }
 
