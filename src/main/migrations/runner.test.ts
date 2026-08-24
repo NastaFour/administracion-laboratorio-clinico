@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -384,5 +384,62 @@ describe('migration runner', () => {
     } finally {
       db.close()
     }
+  })
+})
+
+describe('bootstrap admin seed on first migration (WU13)', () => {
+  let tmpDir: string
+  let dbPath: string
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'labcore-seed-'))
+    dbPath = path.join(tmpDir, 'test.db')
+  })
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it('RED: onFirstMigration runs once with the open db when migrations are applied', async () => {
+    const migrations = loadMigrationsFromDir(path.resolve(__dirname))
+    const seeded = vi.fn((db: Database.Database) => {
+      db.prepare(
+        "INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo, debe_cambiar_clave) VALUES ('admin', 'hash', 'Administrador', 'admin', 1, 1)",
+      ).run()
+    })
+
+    const result = await runMigrations(dbPath, migrations, path.join(tmpDir, 'backups'), {
+      onFirstMigration: seeded,
+    })
+
+    expect(result.applied.length).toBeGreaterThan(0)
+    expect(seeded).toHaveBeenCalledTimes(1)
+
+    const db = new Database(dbPath)
+    try {
+      const admin = db
+        .prepare("SELECT id, username, debe_cambiar_clave FROM usuarios WHERE username = 'admin'")
+        .get() as { id: number; username: string; debe_cambiar_clave: number } | undefined
+      expect(admin).toBeDefined()
+      expect(admin?.debe_cambiar_clave).toBe(1)
+    } finally {
+      db.close()
+    }
+  })
+
+  it('RED: onFirstMigration does NOT run when no migration is pending', async () => {
+    const migrations = loadMigrationsFromDir(path.resolve(__dirname))
+    await runMigrations(dbPath, migrations, path.join(tmpDir, 'backups'))
+
+    const seeded = vi.fn()
+    const second = await runMigrations(
+      dbPath,
+      migrations,
+      path.join(tmpDir, 'backups'),
+      { onFirstMigration: seeded },
+    )
+
+    expect(second.applied).toHaveLength(0)
+    expect(seeded).not.toHaveBeenCalled()
   })
 })

@@ -1,8 +1,8 @@
 import type Database from 'better-sqlite3'
-import { authChannels, ROLES } from '@/shared/contracts'
+import { authChannels, ERROR_CODES, ROLES } from '@/shared/contracts'
 import { handle } from './register'
 import { hashPassword } from '../services/auth'
-import { createUser, disableUser, listUsers, setUserPassword, updateUser } from '../repositories/users'
+import { createUser, disableUser, getUserByUsername, listUsers, setUserPassword, updateUser } from '../repositories/users'
 import { writeAudit } from '../services/audit'
 
 const ADMIN_ONLY = [ROLES.ADMIN]
@@ -13,6 +13,9 @@ export function registerUsersHandlers(db: Database.Database): void {
   })
 
   handle(db, 'users:create', ADMIN_ONLY, authChannels['users:create'].request, async (_, req, session) => {
+    if (getUserByUsername(db, req.usuario)) {
+      throw new Error(ERROR_CODES.DUPLICATE)
+    }
     const hash = await hashPassword(req.clave)
     const user = createUser(db, { ...req, passwordHash: hash })
     writeAudit(db, {

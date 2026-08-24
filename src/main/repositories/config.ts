@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { BioanalistaConfig, LabConfig, PrintConfig } from '@/shared/contracts'
+import type { BioanalistaConfig, BcvRateEntry, LabConfig, PrintConfig } from '@/shared/contracts'
 
 export function getConfigValue(db: Database.Database, clave: string): string | null {
   const row = db.prepare('SELECT valor FROM configuracion WHERE clave = ?').get(clave) as
@@ -119,4 +119,15 @@ export function getBcvRate(db: Database.Database): { tasa: number; actualizado_e
 export function setBcvRate(db: Database.Database, tasa: number, usuarioId: number): { tasa: number; actualizado_en: string } {
   db.prepare('INSERT INTO bcv_historial (tasa_bcv, usuario_id) VALUES (?, ?)').run(tasa, usuarioId)
   return getBcvRate(db)!
+}
+
+export function listBcvHistory(db: Database.Database, limit = 100): BcvRateEntry[] {
+  const rows = db
+    .prepare('SELECT tasa_bcv, creado_en, usuario_id FROM bcv_historial ORDER BY id DESC LIMIT ?')
+    .all(limit) as Array<{ tasa_bcv: number; creado_en: string; usuario_id: number | null }>
+  return rows.map((row) => ({
+    tasa: row.tasa_bcv,
+    actualizado_en: new Date(row.creado_en).toISOString(),
+    usuario_id: row.usuario_id,
+  }))
 }

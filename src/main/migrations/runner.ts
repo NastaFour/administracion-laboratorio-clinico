@@ -22,6 +22,19 @@ export interface RunMigrationsResult {
 }
 
 /**
+ * Options for {@link runMigrations}.
+ */
+export interface RunMigrationsOptions {
+  /**
+   * Invoked ONCE after the first successful migration run on a database
+   * (i.e. only when at least one migration was applied). Receives the open
+   * connection so callers can seed bootstrap data — e.g. the initial admin
+   * user (task 5.2) — without a second connection or app-level code path.
+   */
+  onFirstMigration?: (db: Database.Database) => Promise<void> | void
+}
+
+/**
  * Migration failure codes.
  */
 export type MigrationErrorCode = 'BACKUP_FAILED' | 'MIGRATION_FAILED' | 'RESTORE_FAILED'
@@ -111,6 +124,7 @@ export async function runMigrations(
   dbPath: string,
   migrations: Migration[],
   backupsDir: string,
+  options: RunMigrationsOptions = {},
 ): Promise<RunMigrationsResult> {
   const db = new Database(dbPath)
   let closed = false
@@ -201,6 +215,20 @@ export async function runMigrations(
         backupPath,
         error,
       )
+    }
+
+    if (options.onFirstMigration && applied.length > 0) {
+      try {
+        await options.onFirstMigration(db)
+      } catch (error) {
+        throw new MigrationError(
+          'Migrations applied but bootstrap seeding failed. '
+            + `Backup from before the migration is at ${backupPath}`,
+          'MIGRATION_FAILED',
+          backupPath,
+          error,
+        )
+      }
     }
 
     const finalVersion = getCurrentVersion(db)

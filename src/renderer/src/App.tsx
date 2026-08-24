@@ -12,6 +12,7 @@ import { PaymentsPage } from './features/payments/PaymentsPage'
 import { CierrePage } from './features/cierre/CierrePage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { HistoryPage } from './features/history/HistoryPage'
+import { SettingsPage } from './features/settings/SettingsPage'
 import { useSessionStore } from './stores/useSessionStore'
 import { cn } from './lib/cn'
 
@@ -163,11 +164,7 @@ function App() {
         {activeTab === 'payments' && <PaymentsPage />}
         {activeTab === 'cierre' && <CierrePage />}
         {activeTab === 'history' && <HistoryPage />}
-        {activeTab === 'settings' && (
-          <div className="rounded-lg border border-paper-200 bg-paper-50 p-8 text-center">
-            <p className="text-ink-500">Configuración disponible en próxima entrega.</p>
-          </div>
-        )}
+        {activeTab === 'settings' && <SettingsPage />}
       </main>
     </div>
   )

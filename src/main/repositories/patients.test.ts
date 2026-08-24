@@ -6,6 +6,7 @@ import {
   getPatient,
   getPatientByCedula,
   listPatients,
+  mergePatientsOverwrite,
   searchPatients,
   updatePatient,
 } from './patients'
@@ -128,5 +129,79 @@ describe('patients repository', () => {
     })
     const found = getPatientByCedula(testDb.db, 'E-87654321')
     expect(found?.nombre).toBe('Maria')
+  })
+})
+
+describe('Sobrescribir merge overwrite (M13.5)', () => {
+  let testDb: Awaited<ReturnType<typeof createTestDb>>
+
+  beforeEach(async () => {
+    testDb = await createTestDb()
+    createUser(testDb.db, 'admin1', 'admin')
+  })
+
+  afterEach(() => {
+    testDb.cleanup()
+  })
+
+  const baseInput = {
+    fecha_nacimiento: '1985-03-15',
+    sexo: 'M' as const,
+    telefono: null,
+    email: null,
+    direccion: null,
+  }
+
+  it('RED: overwrites a conflicting cedula without a UNIQUE constraint error', () => {
+    const localId = createPatient(testDb.db, 'V-60000001', 'Juan', 'Pérez')
+
+    expect(() =>
+      mergePatientsOverwrite(testDb.db, [
+        { cedula: 'V-60000001', nombre: 'Juan Carlos', apellido: 'Pérez Sanoja', ...baseInput },
+      ]),
+    ).not.toThrow()
+
+    const overwritten = getPatientByCedula(testDb.db, 'V-60000001')
+    expect(overwritten?.id).toBe(localId)
+    expect(overwritten?.nombre).toBe('Juan Carlos')
+    expect(overwritten?.apellido).toBe('Pérez Sanoja')
+  })
+
+  it('inserts incoming patients that do not exist locally and keeps the rest', () => {
+    createPatient(testDb.db, 'V-60000002')
+
+    mergePatientsOverwrite(testDb.db, [
+      { cedula: 'V-60000003', nombre: 'Nuevo', apellido: 'Importado', ...baseInput },
+      { cedula: 'V-60000004', nombre: 'Otro', apellido: 'Importado', ...baseInput },
+    ])
+
+    expect(getPatientByCedula(testDb.db, 'V-60000002')).not.toBeNull()
+    expect(getPatientByCedula(testDb.db, 'V-60000003')?.nombre).toBe('Nuevo')
+    const total = testDb.db.prepare('SELECT COUNT(*) as count FROM pacientes').get() as { count: number }
+    expect(total.count).toBe(3)
+  })
+
+  it('preserves clinical history linked to the overwritten patient', () => {
+    const localId = createPatient(testDb.db, 'V-60000005')
+    mergePatientsOverwrite(testDb.db, [
+      { cedula: 'V-60000005', nombre: 'Actualizada', apellido: 'Pérez', ...baseInput },
+    ])
+    // The row identity survives so ordenes.paciente_id references stay intact.
+    expect(getPatient(testDb.db, localId)?.nombre).toBe('Actualizada')
+  })
+
+  it('is atomic: a failing batch rolls back every change (single transaction)', () => {
+    createPatient(testDb.db, 'V-60000006', 'Original', 'Original')
+
+    expect(() =>
+      mergePatientsOverwrite(testDb.db, [
+        { cedula: 'V-60000007', nombre: 'Insertada', apellido: 'Ok', ...baseInput },
+        // NOT NULL violation mid-batch forces the whole transaction to roll back.
+        { cedula: 'V-60000008', nombre: null as unknown as string, apellido: 'Boom', ...baseInput },
+      ]),
+    ).toThrow()
+
+    expect(getPatientByCedula(testDb.db, 'V-60000007')).toBeNull()
+    expect(getPatientByCedula(testDb.db, 'V-60000006')?.nombre).toBe('Original')
   })
 })

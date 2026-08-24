@@ -16,6 +16,7 @@ import { registerResultsHandlers } from './ipc/results.ipc'
 import { registerPaymentsHandlers } from './ipc/payments.ipc'
 import { registerDashboardHandlers } from './ipc/dashboard.ipc'
 import { registerReportsHandlers } from './ipc/reports.ipc'
+import { registerConfigHandlers } from './ipc/config.ipc'
 import { configureGuardDependencies } from './ipc/register'
 import { getSession } from './services/auth'
 import { writeAudit } from './services/audit'
@@ -29,16 +30,20 @@ async function prepareDatabase(): Promise<void> {
     ? path.join(app.getPath('userData'), 'backups')
     : path.resolve('backups')
   const migrations = loadMigrationsFromDir(migrationsDir)
-  await runMigrations(dbPath, migrations, backupsDir)
+  await runMigrations(dbPath, migrations, backupsDir, {
+    // Bootstrap the initial admin on FIRST migration (task 5.2): seeded by the
+    // migration layer right after the schema exists — not on every startup.
+    onFirstMigration: async (db) => {
+      const hash = await hashPassword('admin123')
+      bootstrapAdminUser(db, hash)
+    },
+  })
 }
 
 async function bootstrap(): Promise<void> {
   configureGuardDependencies({ getSession, writeAudit })
 
   const db = getDatabase()
-  const hash = await hashPassword('admin123')
-  bootstrapAdminUser(db, hash)
-
   registerAuthHandlers(db)
   registerUsersHandlers(db)
   registerPatientsHandlers(db)
@@ -50,6 +55,7 @@ async function bootstrap(): Promise<void> {
   registerPaymentsHandlers(db)
   registerDashboardHandlers(db)
   registerReportsHandlers(db)
+  registerConfigHandlers(db)
 }
 
 app.whenReady().then(async () => {

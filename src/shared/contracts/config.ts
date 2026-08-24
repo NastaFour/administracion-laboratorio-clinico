@@ -1,6 +1,17 @@
 import { z } from 'zod'
-import { emailSchema, phoneSchema } from './primitives'
+import { emailSchema, phoneSchema, idSchema, positiveMoneySchema } from './primitives'
 import { envelopeSchema } from './errors'
+
+/**
+ * Lab logo must travel as a base64 data URI (N11.3) — filesystem paths are
+ * machine-specific and are rejected so the PDF engine never resolves them.
+ */
+export const logoDataUriSchema = z
+  .string()
+  .max(4_000_000, { error: 'Logo image is too large (max ~3 MB)' })
+  .regex(/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/, {
+    error: 'Logo must be a base64 image data URI (data:image/*;base64,...)',
+  })
 
 export const labConfigSchema = z.object({
   nombre: z.string().min(1),
@@ -37,6 +48,15 @@ export const printConfigSchema = z.object({
 
 export type PrintConfig = z.infer<typeof printConfigSchema>
 
+/** One row of BCV-rate history (M13.2): newest-first entries with actor + timestamp. */
+export const bcvRateEntrySchema = z.object({
+  tasa: positiveMoneySchema,
+  actualizado_en: z.string().datetime(),
+  usuario_id: idSchema.nullable(),
+})
+
+export type BcvRateEntry = z.infer<typeof bcvRateEntrySchema>
+
 export const configChannels = {
   'config:getLab': {
     request: z.void(),
@@ -50,8 +70,12 @@ export const configChannels = {
     request: bioanalistaConfigSchema,
     response: envelopeSchema(bioanalistaConfigSchema),
   },
+  'config:getBioanalista': {
+    request: z.void(),
+    response: envelopeSchema(bioanalistaConfigSchema),
+  },
   'config:setLogo': {
-    request: z.object({ logo: z.string().min(1) }),
+    request: z.object({ logo: logoDataUriSchema }),
     response: envelopeSchema(z.string()),
   },
   'config:getPrint': {
@@ -61,6 +85,10 @@ export const configChannels = {
   'config:setPrint': {
     request: printConfigSchema,
     response: envelopeSchema(printConfigSchema),
+  },
+  'config:getBcvHistory': {
+    request: z.void(),
+    response: envelopeSchema(z.array(bcvRateEntrySchema)),
   },
 } as const
 

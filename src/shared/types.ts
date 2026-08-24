@@ -97,9 +97,11 @@ export interface LabCoreAPI {
   config: {
     getBcvRate: () => Promise<ResponseOf<IpcChannels['config:getBcvRate']>>
     setBcvRate: (req: RequestOf<IpcChannels['config:setBcvRate']>) => Promise<ResponseOf<IpcChannels['config:setBcvRate']>>
+    getBcvHistory: () => Promise<ResponseOf<IpcChannels['config:getBcvHistory']>>
     getLab: () => Promise<ResponseOf<IpcChannels['config:getLab']>>
     setLab: (req: RequestOf<IpcChannels['config:setLab']>) => Promise<ResponseOf<IpcChannels['config:setLab']>>
     setBioanalista: (req: RequestOf<IpcChannels['config:setBioanalista']>) => Promise<ResponseOf<IpcChannels['config:setBioanalista']>>
+    getBioanalista: () => Promise<ResponseOf<IpcChannels['config:getBioanalista']>>
     setLogo: (req: RequestOf<IpcChannels['config:setLogo']>) => Promise<ResponseOf<IpcChannels['config:setLogo']>>
     getPrint: () => Promise<ResponseOf<IpcChannels['config:getPrint']>>
     setPrint: (req: RequestOf<IpcChannels['config:setPrint']>) => Promise<ResponseOf<IpcChannels['config:setPrint']>>

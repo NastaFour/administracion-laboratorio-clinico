@@ -118,9 +118,11 @@ export const CHANNEL_ALLOWLIST = Object.freeze([
   'config:getLab',
   'config:setLab',
   'config:setBioanalista',
+  'config:getBioanalista',
   'config:setLogo',
   'config:getPrint',
   'config:setPrint',
+  'config:getBcvHistory',
 
   // backup / import / export
   'backup:create',

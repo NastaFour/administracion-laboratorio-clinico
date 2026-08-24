@@ -133,6 +133,27 @@ export function deactivatePatient(db: Database.Database, id: number): Patient {
   return patient
 }
 
+/**
+ * Sobrescribir merge (M13.5): applies an incoming patient batch inside ONE
+ * transaction. Conflicting cédulas overwrite the local row in place — the
+ * row identity survives so `ordenes.paciente_id` references stay intact and
+ * the UNIQUE(cedula) constraint is never hit. Non-conflicting patients are
+ * inserted. A failure anywhere rolls back the whole batch.
+ */
+export const mergePatientsOverwrite = (db: Database.Database, incoming: PatientInput[]): void => {
+  const applyBatch = db.transaction((patients: PatientInput[]) => {
+    for (const input of patients) {
+      const existing = getPatientByCedula(db, input.cedula)
+      if (existing) {
+        updatePatient(db, existing.id, input)
+      } else {
+        createPatient(db, input)
+      }
+    }
+  })
+  applyBatch(incoming)
+}
+
 export interface PatientHistoryOrder {
   orden_id: number
   estatus: string
