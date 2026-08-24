@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import type Database from 'better-sqlite3'
 import { reportsChannels, ROLES, type Session } from '@/shared/contracts'
 import { handle } from './register'
-import { printReportToPdf, printReportToPrinter, type PdfDeps } from '../services/pdf'
+import { previewReport, printReportToPdf, printReportToPrinter, type PdfDeps } from '../services/pdf'
 
 // Role matrix (design): print/preview/history/dashboard are available to every role.
 const REPORT_ROLES = [ROLES.ADMIN, ROLES.BIOANALISTA, ROLES.TECNICO, ROLES.RECEPCION]
@@ -12,6 +12,21 @@ export interface ReportRequestInput {
   ordenId: number
   copia: boolean
   filePath?: string
+}
+
+/**
+ * Open the WYSIWYG on-screen preview of a validated report (M8.6). Loads the
+ * shared WU10 template into a visible window with the print pipeline's security
+ * settings. No print and no audit row on preview (audit is print/save only).
+ */
+export async function handlePreviewReport(
+  db: Database.Database,
+  req: ReportRequestInput,
+  _session: Session,
+  deps?: PdfDeps,
+): Promise<string> {
+  await previewReport(db, req.ordenId, deps, { copia: req.copia })
+  return 'ok'
 }
 
 /**
@@ -60,8 +75,7 @@ export async function handleSaveReportPdf(
 }
 
 export function registerReportsHandlers(db: Database.Database): void {
-  // reports:preview (WYSIWYG window) is deferred to the WU15 smoke slice —
-  // the same shared template is used for preview, print and save.
+  handle(db, 'reports:preview', REPORT_ROLES, reportsChannels['reports:preview'].request, handlePreviewReport)
   handle(db, 'reports:print', REPORT_ROLES, reportsChannels['reports:print'].request, handlePrintReport)
   handle(db, 'reports:savePdf', REPORT_ROLES, reportsChannels['reports:savePdf'].request, handleSaveReportPdf)
 }

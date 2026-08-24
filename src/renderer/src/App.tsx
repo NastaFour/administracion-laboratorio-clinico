@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Users, LogOut, Beaker, FlaskConical, Settings, FileText, Stethoscope, TestTube, ClipboardList, Wallet, Calculator, LayoutDashboard, History } from 'lucide-react'
+import { Users, LogOut, Beaker, FlaskConical, Settings, FileText, Stethoscope, TestTube, ClipboardList, Wallet, Calculator, LayoutDashboard, History, ScrollText } from 'lucide-react'
 import { Login } from './features/auth/Login'
 import { LockScreen } from './features/auth/LockScreen'
 import { PatientsPage } from './features/patients/PatientsPage'
@@ -13,10 +13,11 @@ import { CierrePage } from './features/cierre/CierrePage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { HistoryPage } from './features/history/HistoryPage'
 import { SettingsPage } from './features/settings/SettingsPage'
+import { AuditPage } from './features/audit/AuditPage'
 import { useSessionStore } from './stores/useSessionStore'
 import { cn } from './lib/cn'
 
-type Tab = 'dashboard' | 'patients' | 'catalog' | 'orders' | 'medicos' | 'sampling' | 'results' | 'payments' | 'cierre' | 'history' | 'settings'
+type Tab = 'dashboard' | 'patients' | 'catalog' | 'orders' | 'medicos' | 'sampling' | 'results' | 'payments' | 'cierre' | 'history' | 'settings' | 'audit'
 
 function App() {
   const { session, locked, restore, resetIdle, logout } = useSessionStore()
@@ -133,6 +134,14 @@ function App() {
             active={activeTab === 'settings'}
             onClick={() => setActiveTab('settings')}
           />
+          {session.rol === 'admin' && (
+            <NavItem
+              icon={ScrollText}
+              label="Auditoría"
+              active={activeTab === 'audit'}
+              onClick={() => setActiveTab('audit')}
+            />
+          )}
         </nav>
 
         <div className="p-4 border-t border-paper-200 space-y-3">
@@ -165,6 +174,7 @@ function App() {
         {activeTab === 'cierre' && <CierrePage />}
         {activeTab === 'history' && <HistoryPage />}
         {activeTab === 'settings' && <SettingsPage />}
+        {activeTab === 'audit' && <AuditPage />}
       </main>
     </div>
   )

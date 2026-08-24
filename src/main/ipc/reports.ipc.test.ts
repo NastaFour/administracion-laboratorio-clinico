@@ -6,8 +6,8 @@ import { createExam, createOrder as helperCreateOrder, createPatient, createTest
 import { buildGuardedHandler } from './register'
 import { reportsChannels, ERROR_CODES, RESULT_STATUS, RESULT_TYPE, type Session } from '@/shared/contracts'
 import { createResult } from '../repositories/results'
-import { handlePrintReport, handleSaveReportPdf, registerReportsHandlers } from './reports.ipc'
-import type { PdfDeps, ReportWindowLike } from '../services/pdf'
+import { handlePreviewReport, handlePrintReport, handleSaveReportPdf, registerReportsHandlers } from './reports.ipc'
+import type { PdfDeps, PreviewWindowLike, ReportWindowLike } from '../services/pdf'
 
 vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
@@ -194,14 +194,63 @@ describe('reports IPC (WU12 re-print / re-export)', () => {
       if (!denied.ok) expect(denied.error.code).toBe(ERROR_CODES.PERMISSION_DENIED)
     })
 
-    it('registerReportsHandlers registers print + savePdf (preview deferred to WU15)', async () => {
+    it('registerReportsHandlers registers preview + print + savePdf', async () => {
       const { ipcMain } = await import('electron')
       const handleSpy = vi.mocked(ipcMain.handle)
       handleSpy.mockClear()
       registerReportsHandlers(testDb.db)
+      expect(handleSpy).toHaveBeenCalledWith('reports:preview', expect.any(Function))
       expect(handleSpy).toHaveBeenCalledWith('reports:print', expect.any(Function))
       expect(handleSpy).toHaveBeenCalledWith('reports:savePdf', expect.any(Function))
-      expect(handleSpy).not.toHaveBeenCalledWith('reports:preview', expect.any(Function))
+    })
+
+    it('allows every role on reports:preview and blocks anonymous', async () => {
+      const handler = buildGuardedHandler(
+        testDb.db,
+        'reports:preview',
+        ['admin', 'bioanalista', 'tecnico', 'recepcion'],
+        reportsChannels['reports:preview'].request,
+        async () => 'ok',
+        { getSession: () => makeSession('recepcion', userId), writeAudit: vi.fn() },
+      )
+      const result = await handler({}, { ordenId, copia: false })
+      expect(result.ok).toBe(true)
+
+      const anonymous = buildGuardedHandler(
+        testDb.db,
+        'reports:preview',
+        ['admin', 'bioanalista', 'tecnico', 'recepcion'],
+        reportsChannels['reports:preview'].request,
+        async () => 'ok',
+        { getSession: () => null, writeAudit: vi.fn() },
+      )
+      const denied = await anonymous({}, { ordenId, copia: false })
+      expect(denied.ok).toBe(false)
+      if (!denied.ok) expect(denied.error.code).toBe(ERROR_CODES.PERMISSION_DENIED)
+    })
+  })
+
+  describe('preview (reports:preview, C1 / M8.6)', () => {
+    it('builds report data, loads the template into a visible window, and does NOT audit', async () => {
+      const show = vi.fn()
+      const captured: Array<{ path: string; payload: string }> = []
+      const deps: PdfDeps = {
+        createPreviewWindow: vi.fn(async (path: string, payload: string) => {
+          captured.push({ path, payload })
+          return { show } satisfies PreviewWindowLike
+        }),
+      }
+
+      await handlePreviewReport(testDb.db, { ordenId, copia: false }, makeSession('tecnico', userId), deps)
+
+      expect(captured).toHaveLength(1)
+      expect(captured[0].path.endsWith('report.html')).toBe(true)
+      const decoded = JSON.parse(Buffer.from(captured[0].payload, 'base64url').toString('utf8'))
+      expect(decoded.examenes).toHaveLength(1)
+      expect(show).toHaveBeenCalledTimes(1)
+
+      const audit = testDb.db.prepare('SELECT COUNT(*) AS n FROM auditoria').get() as { n: number }
+      expect(audit.n).toBe(0)
     })
   })
 })

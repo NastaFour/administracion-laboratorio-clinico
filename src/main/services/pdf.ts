@@ -286,8 +286,14 @@ export interface ReportWindowLike {
   destroy: () => void
 }
 
+/** Minimal structural view of the visible preview window (C1 / M8.6). */
+export interface PreviewWindowLike {
+  show: () => void
+}
+
 export interface PdfDeps {
   createOffscreenWindow?: (templatePath: string, payload: string) => Promise<ReportWindowLike>
+  createPreviewWindow?: (templatePath: string, payload: string) => Promise<PreviewWindowLike>
 }
 
 export interface PrintOptions {
@@ -331,6 +337,62 @@ export async function createReportWindow(
 function resolvePrintWindow(deps: PdfDeps, templatePath: string, payload: string): Promise<ReportWindowLike> {
   const factory = deps.createOffscreenWindow ?? createReportWindow
   return factory(templatePath, payload)
+}
+
+/**
+ * Create the VISIBLE WYSIWYG preview window (C1 / M8.6 / N11.1). It loads the
+ * SAME shared template and enforces the SAME security contract as the print
+ * pipeline (N2.5): sandbox:true, contextIsolation:true, webSecurity:true and
+ * nodeIntegration:false — webSecurity is NEVER disabled. The window is hidden
+ * until the template finishes loading, then shown, and sized for A4 viewing
+ * (210mm × 297mm ≈ 794 × 1123 px at 96 DPI).
+ */
+export async function createPreviewBrowserWindow(
+  templatePath: string,
+  payload: string,
+): Promise<PreviewWindowLike> {
+  const win = new BrowserWindow({
+    show: false,
+    width: 820,
+    height: 1160,
+    useContentSize: true,
+    autoHideMenuBar: true,
+    title: 'Vista previa del reporte',
+    webPreferences: {
+      sandbox: true,
+      contextIsolation: true,
+      webSecurity: true,
+      nodeIntegration: false,
+    },
+  })
+  await win.loadFile(templatePath, { query: { payload } })
+  return win
+}
+
+function resolvePreviewWindow(
+  deps: PdfDeps,
+  templatePath: string,
+  payload: string,
+): Promise<PreviewWindowLike> {
+  const factory = deps.createPreviewWindow ?? createPreviewBrowserWindow
+  return factory(templatePath, payload)
+}
+
+/**
+ * Open the on-screen WYSIWYG preview of a validated report (M8.6). Loads the
+ * shared template into a visible window with the print pipeline's security
+ * settings. Preview is NEVER audited — only print/save write `reporte.impreso`
+ * (M8.8). The window stays open for the user to inspect (no destroy).
+ */
+export async function previewReport(
+  db: Database.Database,
+  ordenId: number,
+  deps: PdfDeps = {},
+  options: PrintOptions = {},
+): Promise<void> {
+  const data = buildReportData(db, ordenId, { copia: options.copia })
+  const win = await resolvePreviewWindow(deps, resolveReportTemplatePath(), encodeReportPayload(data))
+  win.show()
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { History, Printer, FileDown, Search, X } from 'lucide-react'
+import { History, Printer, FileDown, Search, X, Eye } from 'lucide-react'
 import type { OrderStatus, Patient } from '@/shared/contracts'
 import { ORDER_STATUS } from '@/shared/contracts'
 import { Button } from '../../components/ui/Button'
@@ -29,7 +29,7 @@ function formatFecha(iso: string): string {
 }
 
 export function HistoryPage() {
-  const { rows, exams, loading, error, filters, setFilters, reprint, reexport, exportCsv } = useHistory()
+  const { rows, exams, loading, error, filters, setFilters, reprint, reexport, preview, exportCsv } = useHistory()
   const [patientQuery, setPatientQuery] = useState('')
   const [patientResults, setPatientResults] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
@@ -74,6 +74,14 @@ export function HistoryPage() {
     const result = await reprint(ordenId)
     if (!result.ok) {
       setActionError(result.error ?? 'No se pudo reimprimir el reporte.')
+    }
+  }
+
+  const handlePreview = async (ordenId: number) => {
+    setActionError(null)
+    const result = await preview(ordenId)
+    if (!result.ok) {
+      setActionError(result.error ?? 'No se pudo abrir la vista previa.')
     }
   }
 
@@ -304,6 +312,15 @@ export function HistoryPage() {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void handlePreview(orden.id)}
+                        data-testid={`history-preview-${orden.id}`}
+                      >
+                        <Eye size={14} className="mr-1" />
+                        Vista previa
+                      </Button>
                       <Button
                         variant="secondary"
                         size="sm"

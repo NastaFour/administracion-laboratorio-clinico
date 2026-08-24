@@ -41,7 +41,7 @@ const mockApi = {
   },
   catalog: { listExams: vi.fn() },
   payments: { balance: vi.fn() },
-  reports: { print: vi.fn(), savePdf: vi.fn() },
+  reports: { print: vi.fn(), savePdf: vi.fn(), preview: vi.fn() },
 }
 
 beforeEach(() => {
@@ -75,6 +75,7 @@ beforeEach(() => {
   }))
   mockApi.reports.print.mockResolvedValue({ ok: true, data: undefined })
   mockApi.reports.savePdf.mockResolvedValue({ ok: true, data: undefined })
+  mockApi.reports.preview.mockResolvedValue({ ok: true, data: 'ok' })
   window.api = mockApi as unknown as Window['api']
 })
 
@@ -147,6 +148,16 @@ describe('HistoryPage', () => {
     fireEvent.click(screen.getByTestId('history-reexport-1'))
     await waitFor(() => {
       expect(mockApi.reports.savePdf).toHaveBeenCalledWith({ ordenId: 1, copia: false })
+    })
+  })
+
+  it('opens the WYSIWYG preview through reports:preview (M8.6)', async () => {
+    render(<HistoryPage />)
+    await waitFor(() => expect(screen.getByTestId('history-row-1')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByTestId('history-preview-1'))
+    await waitFor(() => {
+      expect(mockApi.reports.preview).toHaveBeenCalledWith({ ordenId: 1, copia: false })
     })
   })
 

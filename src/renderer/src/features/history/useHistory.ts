@@ -14,6 +14,7 @@ export interface HistoryState {
   refetch: () => Promise<void>
   reprint: (ordenId: number) => Promise<{ ok: boolean; error?: string }>
   reexport: (ordenId: number) => Promise<{ ok: boolean; error?: string }>
+  preview: (ordenId: number) => Promise<{ ok: boolean; error?: string }>
   exportCsv: () => void
 }
 
@@ -123,6 +124,14 @@ export function useHistory(): HistoryState {
     return { ok: true as const }
   }, [])
 
+  const preview = useCallback(async (ordenId: number) => {
+    const result = await window.api.reports.preview({ ordenId, copia: false })
+    if (!result.ok) {
+      return { ok: false as const, error: mapError(result.error.code) }
+    }
+    return { ok: true as const }
+  }, [])
+
   const exportCsv = useCallback(() => {
     if (rows.length === 0) {
       return
@@ -147,6 +156,7 @@ export function useHistory(): HistoryState {
     refetch: fetch,
     reprint,
     reexport,
+    preview,
     exportCsv,
   }
 }
