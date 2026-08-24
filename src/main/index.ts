@@ -17,6 +17,7 @@ import { registerPaymentsHandlers } from './ipc/payments.ipc'
 import { registerDashboardHandlers } from './ipc/dashboard.ipc'
 import { registerReportsHandlers } from './ipc/reports.ipc'
 import { registerConfigHandlers } from './ipc/config.ipc'
+import { registerBackupHandlers } from './ipc/backup.ipc'
 import { configureGuardDependencies } from './ipc/register'
 import { getSession } from './services/auth'
 import { writeAudit } from './services/audit'
@@ -56,6 +57,7 @@ async function bootstrap(): Promise<void> {
   registerDashboardHandlers(db)
   registerReportsHandlers(db)
   registerConfigHandlers(db)
+  registerBackupHandlers(db)
 }
 
 app.whenReady().then(async () => {

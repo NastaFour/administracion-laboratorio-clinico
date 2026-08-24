@@ -113,7 +113,7 @@ describe('SettingsPage (M13.3 split)', () => {
     fireEvent.click(screen.getByTestId('settings-tab-billing'))
     await waitFor(() => expect(screen.getByTestId('settings-billing')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('settings-tab-backup'))
-    await waitFor(() => expect(screen.getByTestId('settings-backup')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTestId('backup-screen')).toBeInTheDocument())
   })
 
   it('denies access to non-admin roles', async () => {

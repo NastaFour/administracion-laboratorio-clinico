@@ -41,6 +41,14 @@ export function listBackups(backupsDir: string): BackupRecord[] {
 export function getSchemaVersion(dbPath: string): number {
   const db = new Database(dbPath)
   try {
+    const table = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schema_version'")
+      .get() as { name: string } | undefined
+    if (!table) {
+      // A database without a `schema_version` table is a pre-migration (v0)
+      // database — restoring it is rejected as incompatible by the service.
+      return 0
+    }
     const row = db.prepare('SELECT MAX(version) as version FROM schema_version').get() as {
       version: number | null
     }

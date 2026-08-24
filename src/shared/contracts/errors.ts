@@ -13,6 +13,7 @@ export const ERROR_CODES = {
   DB_ERROR: 'DB_ERROR',
   MISSING_BCV_RATE: 'MISSING_BCV_RATE',
   PENDING_BALANCE: 'PENDING_BALANCE',
+  INCOMPATIBLE_SCHEMA_VERSION: 'INCOMPATIBLE_SCHEMA_VERSION',
 } as const
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
@@ -27,6 +28,7 @@ const errorSchema = z.object({
     ERROR_CODES.DB_ERROR,
     ERROR_CODES.MISSING_BCV_RATE,
     ERROR_CODES.PENDING_BALANCE,
+    ERROR_CODES.INCOMPATIBLE_SCHEMA_VERSION,
   ]),
   message: z.string().min(1),
 })

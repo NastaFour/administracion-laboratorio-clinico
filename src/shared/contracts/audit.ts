@@ -45,6 +45,8 @@ export const auditActionSchema = z.enum([
   'reporte.impreso',
   'import.aplicado',
   'export.generado',
+  'backup.creado',
+  'backup.restaurado',
 ])
 
 export type AuditAction = z.infer<typeof auditActionSchema>
