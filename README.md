@@ -1,73 +1,91 @@
-# React + TypeScript + Vite
+# LabCore
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Offline-first desktop application for a single Venezuelan clinical laboratory.
+Built for daily use by a non-technical bioanalyst and 1–2 reception/technician
+users. All patient data lives in a local SQLite database (`better-sqlite3`) under
+Electron's per-user `userData` directory — nothing is sent over the network.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+| Layer | Technology |
+|---|---|
+| Desktop shell | Electron 33 |
+| UI | React 19 + Vite 7 + Tailwind CSS 4 + Zustand 5 |
+| Language | TypeScript 5.9 |
+| Database | better-sqlite3 (WAL, foreign keys ON) |
+| Validation | Zod 4 (shared contracts validated on both IPC sides) |
+| Tests | Vitest (run under Electron's embedded Node — see below) |
+| Packaging | electron-builder (NSIS) |
 
-## React Compiler
+The renderer UI and the report template are Spanish (es-VE). Technical
+artifacts — code, identifiers, comments, this README — are English.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Development
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+npm install        # runs electron-rebuild -f -w better-sqlite3 (postinstall)
+npm run dev        # Vite + Electron with HMR
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+> **Do NOT run `npm rebuild` or `npm install` against system Node.** `better-sqlite3`
+> is compiled for Electron's ABI (Node 20, ABI 130). Tests and any script that
+> opens the database must run under Electron's Node:
+> `$env:ELECTRON_RUN_AS_NODE=1` (the `test` script does this for you).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Commands
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```powershell
+npm test           # Vitest under ELECTRON_RUN_AS_NODE=1
+npm run lint       # ESLint
+npm run build      # tsc --noEmit + vite build (dist/ + dist-electron/)
+npm run package    # build + electron-builder --win --dir (unpacked NSIS output)
+npm run dist       # build + electron-builder --win (installer .exe)
 ```
+
+## Packaging
+
+electron-builder configuration lives in `electron-builder.yml`:
+
+- **Stable identity** — `appId: com.labcore.app`, `productName: LabCore`.
+  The per-user data directory is derived from `productName`, so it must never
+  change: upgrading installs read the same `%APPDATA%/LabCore` userData.
+- **NSIS upgrade-install** — `deleteAppDataOnUninstall: false`. The installer
+  never touches `%APPDATA%/LabCore`, so the database survives both upgrade-install
+  and uninstall.
+
+### Pre-upgrade backup (REQUIRED before installing a new version)
+
+The production database (`lab_clinical.db`) lives in `%APPDATA%/LabCore` and is
+upgraded in place by migrations on first launch of a new version. Before
+installing an upgrade:
+
+1. Open **Configuración → Respaldo** and run **Crear respaldo**, choosing a
+   location outside the app data folder (e.g. a USB drive or a separate
+   `Respaldos` folder).
+2. Confirm the backup file exists and opens (Restaurar is validated against the
+   schema version before any write).
+3. Then install the new version. Migrations also take an automatic pre-migration
+   backup into `userData/backups/` before applying.
+
+If a migration fails, it rolls back and restores the pre-migration backup — you
+can also reinstall the previous version against your manual backup.
+
+## Locale & accessibility
+
+- es-VE formatting is centralized in `src/renderer/src/i18n/es-ve.ts`:
+  `dd/mm/yyyy` dates, `Bs` currency, `V-`/`E-` cédula validation, and a UI
+  dictionary.
+- Keyboard-first: forms use visible focus rings, every input has an accessible
+  label, and data tables meet WCAG AA contrast.
+
+## Release smoke checklist (WU15)
+
+Before shipping an installer, verify in order:
+
+1. `npm test` — all suites green.
+2. `npm run lint` — 0 errors / 0 warnings.
+3. `npm run build` — `dist/` + `dist-electron/` produced (template + fonts copied).
+4. `npm run package` — NSIS unpacked build under `release/`.
+5. Install the new version **over** an existing v1/v2 install with real
+   `%APPDATA%/LabCore` data — confirm the database is intact, the previous
+   version's patients/results still load, and no re-configuration is required.

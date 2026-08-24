@@ -177,6 +177,7 @@ export function OrderForm({ order, onSaved, onCancel, onSubmit }: OrderFormProps
               }}
               onFocus={() => setShowResults(true)}
               placeholder="Buscar por cédula, nombre o teléfono"
+              aria-label="Buscar pacientes"
               error={errors.selectedPatientId}
               disabled={!!order}
             />

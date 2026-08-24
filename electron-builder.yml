@@ -1,0 +1,33 @@
+# electron-builder configuration — LabCore (WU15 hardening)
+#
+# Stable identity: `appId` and `productName` are FROZEN. The NSIS installer
+# derives the per-user data directory from `productName`, so it MUST remain
+# `LabCore` to keep upgrading installs reading the same `%APPDATA%/LabCore`
+# userData as prior versions (D11 / carry-over #1).
+
+appId: com.labcore.app
+productName: LabCore
+
+directories:
+  output: release
+
+files:
+  - dist
+  - dist-electron
+
+win:
+  target:
+    - nsis
+  icon: public/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: LabCore
+  # NEVER delete `%APPDATA%/LabCore` on uninstall or upgrade-install. The
+  # clinical database lives in userData; wiping it would destroy patient data.
+  # Upgrade-installs preserve userData untouched (documented pre-upgrade backup
+  # step in README.md).
+  deleteAppDataOnUninstall: false

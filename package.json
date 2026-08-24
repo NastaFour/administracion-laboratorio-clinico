@@ -1,5 +1,6 @@
 {
   "name": "aplicacion-para-laboratorio-clinico",
+  "productName": "LabCore",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,30 +15,6 @@
     "package": "npm run build && electron-builder build --win --dir",
     "dist": "npm run build && electron-builder build --win",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
-  },
-  "build": {
-    "appId": "com.labcore.app",
-    "productName": "LabCore",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist",
-      "dist-electron"
-    ],
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "public/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "LabCore"
-    }
   },
   "dependencies": {
     "@types/fs-extra": "^11.0.4",

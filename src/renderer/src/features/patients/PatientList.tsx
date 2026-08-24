@@ -28,6 +28,7 @@ export function PatientList({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar por cédula, nombre o teléfono…"
+          aria-label="Buscar pacientes"
           className="pl-10"
         />
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { maskCedula, maskPhone } from '../../lib/masks'
+import { isValidCedula, messages } from '../../i18n/es-ve'
 import type { Patient, PatientInput, Sex } from '@/shared/contracts'
 
 interface PatientFormProps {
@@ -49,8 +50,8 @@ export function PatientForm({ patient, onSaved, onCancel, onSubmit }: PatientFor
 
   const validate = (current: PatientInput): boolean => {
     const next: Partial<Record<keyof PatientInput, string>> = {}
-    if (!/^V-\d+$/.test(current.cedula) && !/^E-\d+$/.test(current.cedula)) {
-      next.cedula = 'Cédula inválida. Use V- o E- seguido de dígitos.'
+    if (!isValidCedula(current.cedula)) {
+      next.cedula = messages.validation.cedulaInvalida
     }
     if (current.nombre.trim().length < 2) next.nombre = 'El nombre es requerido.'
     if (current.apellido.trim().length < 2) next.apellido = 'El apellido es requerido.'

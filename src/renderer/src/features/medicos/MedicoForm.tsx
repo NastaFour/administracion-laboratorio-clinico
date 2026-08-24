@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { isValidCedula, messages } from '../../i18n/es-ve'
 import type { Medico, MedicoInput } from '@/shared/contracts'
 
 interface MedicoFormProps {
@@ -42,8 +43,8 @@ export function MedicoForm({ medico, onSaved, onCancel, onSubmit }: MedicoFormPr
     const next: Partial<Record<keyof MedicoInput, string>> = {}
     if (current.nombre.trim().length < 2) next.nombre = 'El nombre es requerido.'
     if (current.especialidad.trim().length < 2) next.especialidad = 'La especialidad es requerida.'
-    if (current.cedula && !/^V-\d+$/.test(current.cedula) && !/^E-\d+$/.test(current.cedula)) {
-      next.cedula = 'Cédula inválida. Use V- o E- seguido de dígitos.'
+    if (current.cedula && !isValidCedula(current.cedula)) {
+      next.cedula = messages.validation.cedulaInvalida
     }
     setErrors(next)
     return Object.keys(next).length === 0
