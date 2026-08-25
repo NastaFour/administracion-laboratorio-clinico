@@ -87,6 +87,22 @@ describe('computeExactAge', () => {
     expect(age.months).toBe(0)
     expect(age.years).toBe(0)
   })
+
+  it('pins date-only DOBs to the LOCAL calendar day, never the previous day (W-JD3 regression)', () => {
+    // A patient born on the local day 2026-03-01 examined at a reference built
+    // as a local Date for that SAME day is 0 days old. Under UTC parsing of
+    // the date-only DOB (the bug), UTC-negative zones shifted the birth date
+    // back to Feb 28 and this returned 1.
+    const age = computeExactAge('2026-03-01', new Date(2026, 2, 1))
+    expect(age.days).toBe(0)
+    expect(age.months).toBe(0)
+    expect(age.years).toBe(0)
+
+    // Two date-only strings one calendar day apart are exactly 1 day apart —
+    // regardless of the OS timezone or DST rules.
+    expect(computeExactAge('2026-03-01', '2026-03-02').days).toBe(1)
+    expect(computeExactAge('2026-02-28', '2026-03-01').days).toBe(1)
+  })
 })
 
 describe('selectBand', () => {

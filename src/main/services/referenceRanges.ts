@@ -14,8 +14,26 @@ export interface ExactAge {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
+/**
+ * Date-only strings (`YYYY-MM-DD`, e.g. pacientes.fecha_nacimiento) are LOCAL
+ * calendar days. Parsing them with `new Date(string)` would produce UTC
+ * midnight, which on UTC-negative zones shifts back to the PREVIOUS local day
+ * after zeroing hours — so build them from components instead.
+ */
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/
+
+function parseDateOnly(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 function normalizeDate(input: Date | string): Date {
-  const d = typeof input === 'string' ? new Date(input) : new Date(input.getTime())
+  const d =
+    typeof input === 'string'
+      ? DATE_ONLY_RE.test(input)
+        ? parseDateOnly(input)
+        : new Date(input)
+      : new Date(input.getTime())
   d.setHours(0, 0, 0, 0)
   return d
 }
