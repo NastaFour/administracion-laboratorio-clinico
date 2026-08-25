@@ -15,6 +15,7 @@ interface SessionState {
   lock: () => void
   unlock: (clave: string) => Promise<void>
   resetIdle: () => void
+  expire: () => void
   clearError: () => void
 }
 
@@ -113,6 +114,14 @@ export const useSessionStore = create<SessionState>((set, get) => {
       if (get().session && !get().locked) {
         startIdleTimer()
       }
+    },
+
+    // Main-side watchdog expiry (design A4): the MAIN process already
+    // invalidated the session, so drop to the login screen — the renderer
+    // timer is UX only.
+    expire: () => {
+      clearIdleTimer()
+      set({ session: null, locked: true })
     },
 
     clearError: () => {

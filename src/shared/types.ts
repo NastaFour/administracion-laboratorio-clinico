@@ -13,6 +13,8 @@ type ResponseOf<C extends { response: z.ZodType<unknown> }> = z.infer<C['respons
  * role guards and authoritative validation.
  */
 export interface LabCoreAPI {
+  /** Subscribe to main-side idle-watchdog expiry (design A4). Returns an unsubscribe fn. */
+  onSessionExpired: (callback: () => void) => () => void
   auth: {
     login: (req: RequestOf<IpcChannels['auth:login']>) => Promise<ResponseOf<IpcChannels['auth:login']>>
     logout: () => Promise<ResponseOf<IpcChannels['auth:logout']>>

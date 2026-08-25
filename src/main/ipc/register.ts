@@ -16,6 +16,8 @@ export type PublicHandlerFn<TReq, TRes> = (db: Database.Database, req: TReq) => 
 export interface GuardDependencies {
   getSession: () => Session | null
   writeAudit: (db: Database.Database, input: AuditInput) => void
+  /** Optional activity signal for the main-side idle watchdog (design A4). */
+  touchSession?: () => void
 }
 
 function isKnownErrorCode(message: string): message is ErrorCode {
@@ -41,6 +43,9 @@ export function buildGuardedHandler<TReq, TRes>(
     if (!session) {
       return err(ERROR_CODES.PERMISSION_DENIED, 'Sesión no iniciada')
     }
+
+    // Authenticated activity re-arms the main-side idle watchdog.
+    deps.touchSession?.()
 
     if (roles.length > 0 && !roles.includes(session.rol)) {
       deps.writeAudit(db, {

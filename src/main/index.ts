@@ -20,8 +20,9 @@ import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerBackupHandlers } from './ipc/backup.ipc'
 import { registerAuditHandlers } from './ipc/audit.ipc'
 import { configureGuardDependencies } from './ipc/register'
-import { getSession } from './services/auth'
+import { getSession, setIdleExpiryHandler, touchSession } from './services/auth'
 import { writeAudit } from './services/audit'
+import { ensureDefaultLogo } from './services/logo'
 
 async function prepareDatabase(): Promise<void> {
   const dbPath = getDefaultDbPath()
@@ -43,9 +44,24 @@ async function prepareDatabase(): Promise<void> {
 }
 
 async function bootstrap(): Promise<void> {
-  configureGuardDependencies({ getSession, writeAudit })
+  configureGuardDependencies({ getSession, writeAudit, touchSession })
+
+  // Design A4: the MAIN process owns the idle watchdog. On expiry the session
+  // singleton is invalidated (every guarded IPC call then fails with
+  // PERMISSION_DENIED) and the renderer is told to drop to the login screen.
+  setIdleExpiryHandler(() => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send('session:expired')
+    }
+  })
 
   const db = getDatabase()
+
+  // Default lab logo for PDF reports/exports: seed assets/logo.jpeg as a
+  // base64 data URI the first time no logo is configured.
+  const assetsDir = app.isPackaged ? path.join(process.resourcesPath, 'assets') : path.resolve('assets')
+  ensureDefaultLogo(db, assetsDir)
+
   registerAuthHandlers(db)
   registerUsersHandlers(db)
   registerPatientsHandlers(db)

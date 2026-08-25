@@ -61,6 +61,13 @@ function makeDomain<D extends ChannelMap>(channels: D) {
 }
 
 const api: LabCoreAPI = {
+  onSessionExpired: (callback) => {
+    const listener = () => callback()
+    ipcRenderer.on('session:expired', listener)
+    return () => {
+      ipcRenderer.removeListener('session:expired', listener)
+    }
+  },
   auth: makeDomain(authChannels) as LabCoreAPI['auth'],
   users: makeDomain({
     'users:list': authChannels['users:list'],

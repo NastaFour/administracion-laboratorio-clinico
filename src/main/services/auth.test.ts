@@ -1,9 +1,24 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { comparePassword, hashPassword, login, logout, getSession, setSession } from './auth'
+import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest'
+import {
+  comparePassword,
+  expireSession,
+  getSession,
+  hashPassword,
+  IDLE_TIMEOUT_MS,
+  login,
+  logout,
+  setIdleExpiryHandler,
+  setSession,
+  touchSession,
+} from './auth'
 import { createTestDb } from '../repositories/test-helpers'
 import { bootstrapAdminUser, setUserPassword } from '../repositories/users'
 
 describe('auth service', () => {
+  afterEach(() => {
+    logout()
+  })
+
   describe('hashing', () => {
     it('hashes and verifies a password', async () => {
       const hash = await hashPassword('secret123')
@@ -40,6 +55,74 @@ describe('auth service', () => {
       expect(getSession()).toEqual(session)
       logout()
       expect(getSession()).toBeNull()
+    })
+  })
+
+  describe('idle watchdog (design A4 — main-side enforcement)', () => {
+    const makeSession = () => ({
+      userId: 1,
+      usuario: 'admin',
+      nombre: 'Admin',
+      rol: 'admin' as const,
+      loginAt: new Date().toISOString(),
+      debe_cambiar_clave: false,
+    })
+
+    beforeEach(() => {
+      logout()
+      setIdleExpiryHandler(null)
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      setIdleExpiryHandler(null)
+      logout()
+    })
+
+    it('expires the session after IDLE_TIMEOUT_MS without authenticated activity', () => {
+      const onExpire = vi.fn()
+      setIdleExpiryHandler(onExpire)
+      setSession(makeSession())
+      expect(getSession()).not.toBeNull()
+
+      vi.advanceTimersByTime(IDLE_TIMEOUT_MS - 1)
+      expect(getSession()).not.toBeNull()
+
+      vi.advanceTimersByTime(1)
+      expect(getSession()).toBeNull()
+      expect(onExpire).toHaveBeenCalledTimes(1)
+    })
+
+    it('touchSession re-arms the timer (activity proxy)', () => {
+      setSession(makeSession())
+      vi.advanceTimersByTime(IDLE_TIMEOUT_MS / 2)
+      touchSession()
+      vi.advanceTimersByTime(IDLE_TIMEOUT_MS / 2)
+      expect(getSession()).not.toBeNull()
+      vi.advanceTimersByTime(IDLE_TIMEOUT_MS / 2)
+      expect(getSession()).toBeNull()
+    })
+
+    it('logout disarms the watchdog — no expiry notification afterwards', () => {
+      const onExpire = vi.fn()
+      setIdleExpiryHandler(onExpire)
+      setSession(makeSession())
+      logout()
+      vi.advanceTimersByTime(IDLE_TIMEOUT_MS * 2)
+      expect(getSession()).toBeNull()
+      expect(onExpire).not.toHaveBeenCalled()
+    })
+
+    it('expireSession clears the session immediately and notifies exactly once', () => {
+      const onExpire = vi.fn()
+      setIdleExpiryHandler(onExpire)
+      setSession(makeSession())
+      expireSession()
+      expect(getSession()).toBeNull()
+      expect(onExpire).toHaveBeenCalledTimes(1)
+      expireSession()
+      expect(onExpire).toHaveBeenCalledTimes(1)
     })
   })
 

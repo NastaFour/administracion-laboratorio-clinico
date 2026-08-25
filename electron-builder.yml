@@ -24,6 +24,10 @@ extraResources:
     to: migrations
     filter:
       - "**/*.sql"
+  - from: assets
+    to: assets
+    filter:
+      - "logo.jpeg"
 
 win:
   target:

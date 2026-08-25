@@ -27,6 +27,15 @@ function App() {
     void restore()
   }, [restore])
 
+  // Design A4: the MAIN process owns the idle watchdog. When it invalidates
+  // the session it pushes session:expired; drop to the login screen.
+  useEffect(() => {
+    const unsubscribe = window.api.onSessionExpired?.(() => {
+      useSessionStore.getState().expire()
+    })
+    return unsubscribe
+  }, [])
+
   useEffect(() => {
     if (!session) {
       return
