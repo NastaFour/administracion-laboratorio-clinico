@@ -4,11 +4,6 @@ import { CierrePage } from './CierrePage'
 
 const mockRun = vi.fn()
 const mockPrint = vi.fn()
-const mockWin = {
-  document: { write: vi.fn(), close: vi.fn() },
-  focus: vi.fn(),
-  print: vi.fn(),
-}
 
 const cierreData = {
   fecha: '2026-08-18',
@@ -30,9 +25,6 @@ const cierreData = {
 beforeEach(() => {
   mockRun.mockReset()
   mockPrint.mockReset()
-  mockWin.document.write.mockClear()
-  mockWin.document.close.mockClear()
-  mockWin.print.mockClear()
 
   mockRun.mockResolvedValue({ ok: true, data: cierreData })
   mockPrint.mockResolvedValue({ ok: true, data: '<html>Cierre de Caja</html>' })
@@ -41,7 +33,9 @@ beforeEach(() => {
     cierre: { run: mockRun, print: mockPrint },
   } as unknown as Window['api']
 
-  vi.stubGlobal('open', vi.fn().mockReturnValue(mockWin))
+  // The sandboxed renderer must never reach window.open — keep it stubbed so
+  // any accidental call is observable.
+  vi.stubGlobal('open', vi.fn())
 })
 
 afterEach(() => {
@@ -64,7 +58,7 @@ describe('CierrePage', () => {
     expect(screen.getByTestId('cierre-rate-updated')).toHaveTextContent('Última actualización de la tasa')
   })
 
-  it('prints the cierre receipt through cierre:print', async () => {
+  it('prints the cierre receipt through the hidden iframe, never window.open (S-JD3 regression)', async () => {
     render(<CierrePage />)
 
     fireEvent.click(screen.getByTestId('cierre-run'))
@@ -72,12 +66,23 @@ describe('CierrePage', () => {
       expect(screen.getByTestId('cierre-summary')).toBeInTheDocument()
     })
 
+    // Stub the print frame's content window BEFORE clicking Imprimir: the
+    // component must push the HTML into the srcdoc iframe and invoke
+    // contentWindow.print() on it — window.open is denied in production.
+    const iframe = document.querySelector('iframe[title="Cierre de caja"]') as HTMLIFrameElement
+    expect(iframe).not.toBeNull()
+    const focusSpy = vi.fn()
+    const printSpy = vi.fn()
+    Object.defineProperty(iframe, 'contentWindow', { configurable: true, value: { focus: focusSpy, print: printSpy } })
+
     fireEvent.click(screen.getByTestId('cierre-print'))
 
     await waitFor(() => {
       expect(mockPrint).toHaveBeenCalledWith({ fecha: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) })
-      expect(mockWin.document.write).toHaveBeenCalledWith('<html>Cierre de Caja</html>')
-      expect(mockWin.print).toHaveBeenCalled()
+      expect(printSpy).toHaveBeenCalledTimes(1)
+      expect(focusSpy).toHaveBeenCalled()
+      expect(iframe.getAttribute('srcdoc')).toBe('<html>Cierre de Caja</html>')
     })
+    expect(window.open).not.toHaveBeenCalled()
   })
 })

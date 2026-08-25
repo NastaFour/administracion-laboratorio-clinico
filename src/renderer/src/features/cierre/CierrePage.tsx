@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCierre } from './useCierre'
 import { METHOD_LABELS, METHOD_OPTIONS } from '../payments/methods'
+import { todayLocalDateIso } from '../../lib/dates'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 
@@ -20,12 +21,11 @@ function formatDateTime(iso: string | null): string {
   }).format(new Date(iso))
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export function CierrePage() {
-  const [fecha, setFecha] = useState(todayIso())
+  // Default to the LOCAL business day — never the UTC day from toISOString().
+  const [fecha, setFecha] = useState(todayLocalDateIso())
+  const [printHtml, setPrintHtml] = useState<string | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const { cierre, loading, error, run, print } = useCierre(fecha)
 
   const handleRun = () => {
@@ -33,18 +33,31 @@ export function CierrePage() {
   }
 
   const handlePrint = async () => {
+    // Print through a same-origin srcdoc iframe instead of window.open, which
+    // is denied in this renderer (sandbox: true + deny-all window-open handler).
     const html = await print()
     if (!html) return
-    const win = window.open('', '_blank', 'width=800,height=600')
+    setPrintHtml(html)
+  }
+
+  useEffect(() => {
+    if (!printHtml) return
+    const win = iframeRef.current?.contentWindow
     if (!win) return
-    win.document.write(html)
-    win.document.close()
     win.focus()
     win.print()
-  }
+  }, [printHtml])
 
   return (
     <div className="space-y-6">
+      <iframe
+        ref={iframeRef}
+        srcDoc={printHtml ?? ''}
+        title="Cierre de caja"
+        className="absolute h-0 w-0 border-0"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
       <div>
         <h2 className="text-xl font-semibold text-ink-900" data-testid="cierre-heading">
           Cierre de caja
