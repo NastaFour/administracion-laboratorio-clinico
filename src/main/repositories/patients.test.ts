@@ -116,6 +116,15 @@ describe('patients repository', () => {
     expect(all.some((p) => p.id === created)).toBe(true)
   })
 
+  it('search excludes soft-deleted patients (regression)', () => {
+    const created = createPatient(testDb.db, 'V-55555555', 'Buscable', 'Activo')
+    deactivatePatient(testDb.db, created)
+
+    expect(listPatients(testDb.db, false).some((p) => p.cedula === 'V-55555555')).toBe(true)
+    expect(searchPatients(testDb.db, 'V-55555555', 10)).toHaveLength(0)
+    expect(searchPatients(testDb.db, 'Buscable', 10)).toHaveLength(0)
+  })
+
   it('finds patient by cedula', () => {
     repoCreatePatient(testDb.db, {
       cedula: 'E-87654321',

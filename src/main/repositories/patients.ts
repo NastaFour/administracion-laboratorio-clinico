@@ -29,7 +29,7 @@ export function searchPatients(db: Database.Database, query: string, limit = 50)
   const rows = db
     .prepare(
       `SELECT * FROM pacientes
-       WHERE (cedula LIKE ? OR nombres LIKE ? OR apellidos LIKE ? OR telefono LIKE ?)
+       WHERE activo = 1 AND (cedula LIKE ? OR nombres LIKE ? OR apellidos LIKE ? OR telefono LIKE ?)
        ORDER BY apellidos, nombres
        LIMIT ?`,
     )
