@@ -16,9 +16,11 @@ coverage
 *.local
 
 # SQLite runtime artifacts
+*.db
 *.db-wal
 *.db-shm
 *.db-journal
+backups/
 
 # AI/SDD internal progress and state — kept private (public repo shows only the
 # planning artifacts: proposal, design, tasks, specs, exploration)
