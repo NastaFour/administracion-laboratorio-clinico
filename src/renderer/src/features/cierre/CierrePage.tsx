@@ -25,6 +25,10 @@ export function CierrePage() {
   // Default to the LOCAL business day — never the UTC day from toISOString().
   const [fecha, setFecha] = useState(todayLocalDateIso())
   const [printHtml, setPrintHtml] = useState<string | null>(null)
+  // Bumped on every Imprimir click: keying the print effect on this counter
+  // (not on the HTML string) makes repeated clicks re-trigger printing even
+  // when the receipt HTML is identical between clicks.
+  const [printSeq, setPrintSeq] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const { cierre, loading, error, run, print } = useCierre(fecha)
 
@@ -38,21 +42,44 @@ export function CierrePage() {
     const html = await print()
     if (!html) return
     setPrintHtml(html)
+    setPrintSeq((s) => s + 1)
   }
 
   useEffect(() => {
-    if (!printHtml) return
-    const win = iframeRef.current?.contentWindow
-    if (!win) return
-    win.focus()
-    win.print()
-  }, [printHtml])
+    // Skip the initial mount and any run without pending HTML; printSeq alone
+    // drives re-runs so every click prints, even with identical HTML.
+    if (printSeq === 0 || printHtml === null) return
+    const iframe = iframeRef.current
+    if (!iframe) return
+
+    const doPrint = () => {
+      const win = iframe.contentWindow
+      if (!win) return
+      win.focus()
+      win.print()
+    }
+
+    iframe.srcdoc = printHtml
+
+    // If the frame already finished loading its document, print now;
+    // otherwise wait for the load event so the receipt never prints blank.
+    if (iframe.contentDocument?.readyState === 'complete') {
+      doPrint()
+      return
+    }
+
+    const onLoad = () => doPrint()
+    iframe.addEventListener('load', onLoad, { once: true })
+    return () => {
+      iframe.removeEventListener('load', onLoad)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- printSeq alone triggers re-runs; printHtml is read as the latest pending HTML.
+  }, [printSeq])
 
   return (
     <div className="space-y-6">
       <iframe
         ref={iframeRef}
-        srcDoc={printHtml ?? ''}
         title="Cierre de caja"
         className="absolute h-0 w-0 border-0"
         tabIndex={-1}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react'
 import { CierrePage } from './CierrePage'
 
 const mockRun = vi.fn()
@@ -58,7 +58,7 @@ describe('CierrePage', () => {
     expect(screen.getByTestId('cierre-rate-updated')).toHaveTextContent('Última actualización de la tasa')
   })
 
-  it('prints the cierre receipt through the hidden iframe, never window.open (S-JD3 regression)', async () => {
+  it('prints on every Imprimir click by waiting for the iframe load event, never window.open (S-JD3 regression)', async () => {
     render(<CierrePage />)
 
     fireEvent.click(screen.getByTestId('cierre-run'))
@@ -68,21 +68,47 @@ describe('CierrePage', () => {
 
     // Stub the print frame's content window BEFORE clicking Imprimir: the
     // component must push the HTML into the srcdoc iframe and invoke
-    // contentWindow.print() on it — window.open is denied in production.
+    // contentWindow.print() on it once the frame has loaded — window.open is
+    // denied in production.
     const iframe = document.querySelector('iframe[title="Cierre de caja"]') as HTMLIFrameElement
     expect(iframe).not.toBeNull()
     const focusSpy = vi.fn()
     const printSpy = vi.fn()
     Object.defineProperty(iframe, 'contentWindow', { configurable: true, value: { focus: focusSpy, print: printSpy } })
+    // Report the frame as still loading so the component must attach its
+    // once-only load listener; the test dispatches `load` to simulate the
+    // srcdoc document finishing (jsdom does not fire it on its own).
+    Object.defineProperty(iframe, 'contentDocument', { configurable: true, value: { readyState: 'loading' } })
 
-    fireEvent.click(screen.getByTestId('cierre-print'))
-
-    await waitFor(() => {
-      expect(mockPrint).toHaveBeenCalledWith({ fecha: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) })
-      expect(printSpy).toHaveBeenCalledTimes(1)
-      expect(focusSpy).toHaveBeenCalled()
-      expect(iframe.getAttribute('srcdoc')).toBe('<html>Cierre de Caja</html>')
+    // First click: writes the HTML into the iframe, then prints only after
+    // load. act() flushes handlePrint's promise and the print effect, so the
+    // once-only load listener is guaranteed to be attached before dispatching.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('cierre-print'))
     })
+
+    expect(mockPrint).toHaveBeenCalledWith({ fecha: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) })
+    expect(iframe.getAttribute('srcdoc')).toBe('<html>Cierre de Caja</html>')
+    // No printing before the load event fires.
+    expect(printSpy).not.toHaveBeenCalled()
+
+    fireEvent(iframe, new Event('load'))
+
+    expect(printSpy).toHaveBeenCalledTimes(1)
+    expect(focusSpy).toHaveBeenCalledTimes(1)
+
+    // Second click with identical HTML must still print (no Object.is
+    // bail-out): a fresh load cycle ends in a second contentWindow.print().
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('cierre-print'))
+    })
+
+    expect(mockPrint).toHaveBeenCalledTimes(2)
+
+    fireEvent(iframe, new Event('load'))
+
+    expect(printSpy).toHaveBeenCalledTimes(2)
+    expect(focusSpy).toHaveBeenCalledTimes(2)
     expect(window.open).not.toHaveBeenCalled()
   })
 })
