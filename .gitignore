@@ -20,6 +20,15 @@ coverage
 *.db-shm
 *.db-journal
 
+# AI/SDD internal progress and state — kept private (public repo shows only the
+# planning artifacts: proposal, design, tasks, specs, exploration)
+PROBLEMAS_ARREGLADOS.md
+openspec/project-context.md
+openspec/testing-capabilities.md
+openspec/changes/labcore-pro-rebuild/apply-progress.md
+openspec/changes/labcore-pro-rebuild/verify-report.md
+openspec/changes/labcore-pro-rebuild/RESUME.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
