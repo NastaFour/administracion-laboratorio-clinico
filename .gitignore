@@ -39,3 +39,6 @@ openspec/changes/labcore-pro-rebuild/RESUME.md
 *.njsproj
 *.sln
 *.sw?
+
+# Local source assets kept out of the repo (one-off originals)
+WhatsApp*
