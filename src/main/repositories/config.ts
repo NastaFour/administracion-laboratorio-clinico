@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3'
 import type { BioanalistaConfig, BcvRateEntry, LabConfig, PrintConfig } from '@/shared/contracts'
+import { toIsoString } from './helpers'
 
 export function getConfigValue(db: Database.Database, clave: string): string | null {
   const row = db.prepare('SELECT valor FROM configuracion WHERE clave = ?').get(clave) as
@@ -112,7 +113,10 @@ export function getBcvRate(db: Database.Database): { tasa: number; actualizado_e
   }
   return {
     tasa: row.tasa_bcv,
-    actualizado_en: new Date(row.creado_en).toISOString(),
+    // bcv_historial.creado_en is a naive SQLite UTC timestamp — toIsoString
+    // parses it as a UTC instant so the displayed last-updated time is not
+    // shifted by the local timezone (W-JD1).
+    actualizado_en: toIsoString(row.creado_en) ?? '',
   }
 }
 
@@ -127,7 +131,7 @@ export function listBcvHistory(db: Database.Database, limit = 100): BcvRateEntry
     .all(limit) as Array<{ tasa_bcv: number; creado_en: string; usuario_id: number | null }>
   return rows.map((row) => ({
     tasa: row.tasa_bcv,
-    actualizado_en: new Date(row.creado_en).toISOString(),
+    actualizado_en: toIsoString(row.creado_en) ?? '',
     usuario_id: row.usuario_id,
   }))
 }

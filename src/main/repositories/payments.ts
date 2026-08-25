@@ -102,7 +102,7 @@ export function getPaymentMethodTotals(
   const rows = db
     .prepare(
       `SELECT metodo, COALESCE(SUM(monto_bs), 0) as bs, COALESCE(SUM(monto_usd), 0) as usd
-       FROM pagos WHERE date(fecha, 'localtime') = ? AND anulado = 0 GROUP BY metodo`,
+       FROM pagos WHERE date(fecha) = ? AND anulado = 0 GROUP BY metodo`,
     )
     .all(fecha) as Array<{ metodo: string; bs: number; usd: number }>
   const totals: Record<PaymentMethod, { bs: number; usd: number }> = {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { BcvRate, PaymentMethod, RecordPaymentRequest } from '@/shared/contracts'
 import { PAYMENT_METHOD } from '@/shared/contracts'
 import { METHOD_LABELS, METHOD_OPTIONS } from './methods'
+import { todayLocalDateIso } from '../../lib/dates'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 
@@ -45,7 +46,8 @@ export function PaymentRecordForm({ ordenId, rate, onSubmit, onCancel }: Payment
       monto_bs: bsAmount,
       monto_usd: usdAmount,
       referencia: referencia.trim() || null,
-      fecha: new Date().toISOString(),
+      // Local business date (YYYY-MM-DD) — the contract rejects full ISO strings.
+      fecha: todayLocalDateIso(),
     })
     setSubmitting(false)
 

@@ -54,10 +54,11 @@ describe('dashboard aggregates over the seeded DB', () => {
   }
 
   function insertPayment(ordenId: number, fecha: string, montoBs: number, montoUsd: number, metodo = 'efectivo'): void {
+    // pagos.fecha is the LOCAL business day (date-only), matching production.
     db.prepare(
       `INSERT INTO pagos (orden_id, metodo, monto_bs, monto_usd, tasa_bcv, referencia, fecha, usuario_id, anulado)
        VALUES (?, ?, ?, ?, 950, NULL, ?, 1, 0)`,
-    ).run(ordenId, metodo, montoBs, montoUsd, `${fecha} 12:00:00`)
+    ).run(ordenId, metodo, montoBs, montoUsd, fecha)
   }
 
   function insertResult(
@@ -140,7 +141,7 @@ describe('dashboard aggregates over the seeded DB', () => {
         .get() as { n: number }
       const revenueToday = db
         .prepare(
-          "SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha, 'localtime') = '2026-08-20' AND anulado = 0",
+          "SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha) = '2026-08-20' AND anulado = 0",
         )
         .get() as { bs: number; usd: number }
       const pendingResults = db
@@ -288,6 +289,20 @@ describe('dashboard aggregates over the seeded DB', () => {
       expect(stats.top_examenes).toHaveLength(0)
       expect(stats.ingreso_mensual).toEqual([{ mes: '2026-01', bs: 0, usd: 0 }])
       expect(stats.ingreso_mes_anterior_bs).toBe(0)
+    })
+
+    it('RED: a date-only payment on the FIRST day of a month buckets into that month (boundary regression)', () => {
+      // pagos.fecha is date-only; strftime must bucket by the stored value with
+      // NO timezone shift — a payment on 2026-05-01 belongs to '2026-05' and to
+      // the previous-month total of any June range.
+      const created = insertOrder('2026-05-01', patientA, [{ examen_id: examHem, precio: 500 }])
+      insertPayment(created.ordenId, '2026-05-01', 100, 0)
+
+      const may = getStats(db, '2026-05-01', '2026-05-31')
+      expect(may.ingreso_mensual).toEqual([{ mes: '2026-05', bs: 100, usd: 0 }])
+
+      const june = getStats(db, '2026-06-01', '2026-06-30')
+      expect(june.ingreso_mes_anterior_bs).toBe(100)
     })
   })
 

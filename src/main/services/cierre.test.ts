@@ -36,13 +36,14 @@ describe('cierre service', () => {
   })
 
   function seedPayments(): void {
+    // pagos.fecha is the LOCAL business day (date-only), matching production.
     recordPayment(testDb.db, {
       orden_id: ordenId,
       cuenta_id: null,
       metodo: PAYMENT_METHOD.PAGO_MOVIL,
       monto_bs: 1000,
       monto_usd: 0,
-      fecha: `${DATE}T12:00:00.000Z`,
+      fecha: DATE,
       referencia: null,
       usuario_id: userId,
     })
@@ -52,7 +53,7 @@ describe('cierre service', () => {
       metodo: PAYMENT_METHOD.EFECTIVO,
       monto_bs: 2000,
       monto_usd: 0,
-      fecha: `${DATE}T12:00:00.000Z`,
+      fecha: DATE,
       referencia: null,
       usuario_id: userId,
     })
@@ -64,7 +65,7 @@ describe('cierre service', () => {
       monto_bs: 9500,
       monto_usd: 10,
       tasa_bcv: 950,
-      fecha: `${DATE}T12:00:00.000Z`,
+      fecha: DATE,
       referencia: null,
       usuario_id: userId,
     })
@@ -84,22 +85,21 @@ describe('cierre service', () => {
     expect(consolidation.detalle_por_metodo[PAYMENT_METHOD.MIXTO]).toEqual({ bs: 0, usd: 0 })
   })
 
-  it('RED: late-evening UTC payments consolidate on their LOCAL day (C3 regression)', () => {
+  it('RED: a payment on its business day consolidates under that exact date (C3 regression)', () => {
+    // pagos.fecha IS the local business day (date-only). A payment recorded on
+    // 2026-09-30 must consolidate under '2026-09-30' — never shifted to the
+    // previous day by timezone math.
     recordPayment(testDb.db, {
       orden_id: ordenId,
       cuenta_id: null,
       metodo: PAYMENT_METHOD.EFECTIVO,
       monto_bs: 700,
       monto_usd: 0,
-      fecha: '2026-09-30T01:30:00.000Z',
+      fecha: '2026-09-30',
       referencia: null,
       usuario_id: userId,
     })
-    // The expected cierre day is the LOCAL day of that instant — computed from
-    // JS for the same instant, so the assertion holds in any OS timezone.
-    const instant = new Date('2026-09-30T01:30:00.000Z')
-    const localDay = `${instant.getFullYear()}-${String(instant.getMonth() + 1).padStart(2, '0')}-${String(instant.getDate()).padStart(2, '0')}`
-    const consolidation = consolidateCierre(testDb.db, localDay)
+    const consolidation = consolidateCierre(testDb.db, '2026-09-30')
     expect(consolidation.total_bs).toBe(700)
   })
 
@@ -110,7 +110,7 @@ describe('cierre service', () => {
       metodo: PAYMENT_METHOD.EFECTIVO,
       monto_bs: 500,
       monto_usd: 0,
-      fecha: `${DATE}T12:00:00.000Z`,
+      fecha: DATE,
       referencia: null,
       usuario_id: userId,
     })

@@ -67,11 +67,18 @@ export function toIsoString(value: unknown): string | null {
 /**
  * Local `YYYY-MM-DD` for a stored timestamp. Stored values are UTC (schema
  * defaults and ISO writes), so a naive DB string is parsed as UTC first —
- * never as local wall-clock. Returns null when the value is not a date.
+ * never as local wall-clock. A date-only string (`YYYY-MM-DD`) is already a
+ * LOCAL business day (e.g. `pagos.fecha`) and passes through unchanged.
+ * Returns null when the value is not a date.
  */
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/
+
 export function toLocalDateIso(value: unknown): string | null {
   if (value === null || value === undefined) {
     return null
+  }
+  if (typeof value === 'string' && DATE_ONLY_RE.test(value)) {
+    return value
   }
   const date = new Date(typeof value === 'string' ? asUtcInstant(value) : (value as string | number | Date))
   if (Number.isNaN(date.getTime())) {

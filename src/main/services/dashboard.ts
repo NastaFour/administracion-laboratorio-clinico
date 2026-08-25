@@ -54,7 +54,9 @@ export function getTodayKpis(db: Database.Database, fecha?: string): TodayKpi {
 
   const revenueToday = db
     .prepare(
-      'SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha, \'localtime\') = ? AND anulado = 0',
+      // pagos.fecha is a LOCAL date-only business day (D5) — plain date read,
+      // never shifted with 'localtime' (that would drop UTC-4 nights back a day).
+      'SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha) = ? AND anulado = 0',
     )
     .get(day) as { bs: number; usd: number }
 
@@ -187,7 +189,7 @@ export function getStats(db: Database.Database, desde: string, hasta: string): S
     .prepare(
       `SELECT strftime('%Y-%m', fecha) AS mes, COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd
        FROM pagos
-       WHERE anulado = 0 AND date(fecha, 'localtime') BETWEEN ? AND ?
+       WHERE anulado = 0 AND date(fecha) BETWEEN ? AND ?
        GROUP BY mes`,
     )
     .all(desde, hasta) as Array<{ mes: string; bs: number; usd: number }>
