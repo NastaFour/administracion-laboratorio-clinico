@@ -15,6 +15,16 @@ files:
   - dist
   - dist-electron
 
+# Ship the SQL migrations into the packaged resources dir. `src/main/index.ts`
+# loads them from `path.join(process.resourcesPath, 'migrations')` when
+# packaged — without this entry `loadMigrationsFromDir` throws ENOENT and the
+# app quits on first launch.
+extraResources:
+  - from: src/main/migrations
+    to: migrations
+    filter:
+      - "**/*.sql"
+
 win:
   target:
     - nsis
