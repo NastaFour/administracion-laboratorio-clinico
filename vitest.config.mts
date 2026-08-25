@@ -4,7 +4,9 @@ import path from 'node:path'
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      // Tests always run from the repo root (npm test), so cwd-relative is
+      // safe and works under both ESM and CJS config loading.
+      '@': path.resolve('src'),
     },
   },
   test: {

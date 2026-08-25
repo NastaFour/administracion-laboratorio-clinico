@@ -17,6 +17,9 @@ const alias = {
 const reportPublicDir = path.resolve(__dirname, 'src/main/services/pdf/template')
 
 export default defineConfig({
+  // The packaged renderer loads via loadFile (file:// protocol): absolute
+  // asset URLs would resolve to the drive root, so use relative paths.
+  base: './',
   plugins: [
     tailwindcss(),
     react(),
