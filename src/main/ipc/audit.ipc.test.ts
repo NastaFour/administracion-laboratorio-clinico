@@ -93,7 +93,7 @@ describe('audit IPC (admin-only audit:list)', () => {
       createAuditEntry(testDb.db, { usuario_id: tecId, accion: 'paciente.creado', entidad: 'paciente', entidad_id: 1 })
       createAuditEntry(testDb.db, { usuario_id: tecId, accion: 'paciente.editado', entidad: 'paciente', entidad_id: 1 })
       testDb.db
-        .prepare("UPDATE auditoria SET creado_en = CASE WHEN accion = 'paciente.creado' THEN '2026-08-01 10:00:00' ELSE '2026-08-15 10:00:00' END")
+        .prepare("UPDATE auditoria SET creado_en = CASE WHEN accion = 'paciente.creado' THEN '2026-08-01 12:00:00' ELSE '2026-08-15 12:00:00' END")
         .run()
 
       const result = await handlers.get('audit:list')!({}, { desde: '2026-08-10', hasta: '2026-08-20' })

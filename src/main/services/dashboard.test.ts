@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import type Database from 'better-sqlite3'
 import { RESULT_STATUS, RESULT_TYPE } from '@/shared/contracts'
 import { createTestDb, type TestDb } from '../repositories/test-helpers'
-import { getDebtors, getStats, getTodayKpis, getTrends, listPatientAnalytes } from './dashboard'
+import { getDebtors, getStats, getTodayKpis, getTrends, listPatientAnalytes, localDateIso } from './dashboard'
 
 /**
  * RED contract (M11.1 / D10): every dashboard KPI MUST come from real SQL over
@@ -40,7 +40,7 @@ describe('dashboard aggregates over the seeded DB', () => {
         `INSERT INTO ordenes (paciente_id, estatus, observaciones, precio_total, estatus_pago, fecha_solicitud, anulada)
          VALUES (?, ?, '', ?, 'Pendiente', ?, ?)`,
       )
-      .run(pacienteId, extra.estatus ?? 'Pendiente', total, `${fecha} 08:00:00`, extra.anulada ? 1 : 0)
+      .run(pacienteId, extra.estatus ?? 'Pendiente', total, `${fecha} 12:00:00`, extra.anulada ? 1 : 0)
     const ordenId = Number(result.lastInsertRowid)
     const stmt = db.prepare(
       'INSERT INTO orden_examenes (orden_id, examen_id, precio, tercerizado) VALUES (?, ?, ?, 0)',
@@ -57,7 +57,7 @@ describe('dashboard aggregates over the seeded DB', () => {
     db.prepare(
       `INSERT INTO pagos (orden_id, metodo, monto_bs, monto_usd, tasa_bcv, referencia, fecha, usuario_id, anulado)
        VALUES (?, ?, ?, ?, 950, NULL, ?, 1, 0)`,
-    ).run(ordenId, metodo, montoBs, montoUsd, fecha)
+    ).run(ordenId, metodo, montoBs, montoUsd, `${fecha} 12:00:00`)
   }
 
   function insertResult(
@@ -136,11 +136,11 @@ describe('dashboard aggregates over the seeded DB', () => {
 
       // Hand-rolled SQL recomputation — the service MUST agree with it.
       const ordersToday = db
-        .prepare("SELECT COUNT(*) AS n FROM ordenes WHERE date(fecha_solicitud) = '2026-08-20' AND anulada = 0")
+        .prepare("SELECT COUNT(*) AS n FROM ordenes WHERE date(fecha_solicitud, 'localtime') = '2026-08-20' AND anulada = 0")
         .get() as { n: number }
       const revenueToday = db
         .prepare(
-          "SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha) = '2026-08-20' AND anulado = 0",
+          "SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha, 'localtime') = '2026-08-20' AND anulado = 0",
         )
         .get() as { bs: number; usd: number }
       const pendingResults = db
@@ -152,7 +152,7 @@ describe('dashboard aggregates over the seeded DB', () => {
            FROM orden_examenes oe
            JOIN ordenes o ON o.id = oe.orden_id
            JOIN examenes_catalogo ec ON ec.id = oe.examen_id
-           WHERE date(o.fecha_solicitud) = '2026-08-20' AND o.anulada = 0
+           WHERE date(o.fecha_solicitud, 'localtime') = '2026-08-20' AND o.anulada = 0
            GROUP BY ec.categoria`,
         )
         .all() as Array<{ categoria: string; n: number }>
@@ -181,6 +181,25 @@ describe('dashboard aggregates over the seeded DB', () => {
       expect(kpis.ingreso_bs).toBe(0)
       expect(kpis.ingreso_usd).toBe(0)
       expect(kpis.examenes_por_categoria).toEqual({})
+    })
+
+    it('RED: late-evening UTC instants count on their LOCAL day, never tomorrow (C3 regression)', () => {
+      // Stored timestamps are UTC (schema CURRENT_TIMESTAMP). An order created
+      // at 21:39 local (UTC-4) is stamped with tomorrow's UTC date; the KPI for
+      // the local day MUST still count it. The expected day is computed from
+      // the same instant via JS, so the assertion holds in any OS timezone.
+      const instants = ['2026-09-30T01:30:00Z', '2026-09-30T23:30:00Z']
+      const insert = db.prepare(
+        `INSERT INTO ordenes (paciente_id, estatus, observaciones, precio_total, estatus_pago, fecha_solicitud)
+         VALUES (?, 'Pendiente', '', 100, 'Pendiente', ?)`,
+      )
+      for (const instant of instants) {
+        insert.run(patientA, instant)
+        const expectedLocalDay = localDateIso(new Date(instant))
+        const kpis = getTodayKpis(db, expectedLocalDay)
+        expect(kpis.ordenes_hoy).toBe(1)
+        db.prepare('DELETE FROM ordenes WHERE fecha_solicitud = ?').run(instant)
+      }
     })
   })
 

@@ -28,7 +28,7 @@ describe('payments repository', () => {
       monto_usd: 0,
       tasa_bcv: 1,
       referencia: 'REF001',
-      fecha: '2026-08-18',
+      fecha: '2026-08-18T12:00:00.000Z',
       usuario_id: userId,
     })
     expect(payment.metodo).toBe('pago_movil')
@@ -49,7 +49,7 @@ describe('payments repository', () => {
       monto_usd: 0,
       tasa_bcv: 1,
       referencia: null,
-      fecha: '2026-08-18',
+      fecha: '2026-08-18T12:00:00.000Z',
       usuario_id: userId,
     })
     recordPayment(testDb.db, {
@@ -60,7 +60,7 @@ describe('payments repository', () => {
       monto_usd: 0,
       tasa_bcv: 1,
       referencia: 'REF002',
-      fecha: '2026-08-18',
+      fecha: '2026-08-18T12:00:00.000Z',
       usuario_id: userId,
     })
 
@@ -77,7 +77,7 @@ describe('payments repository', () => {
       monto_usd: 0,
       tasa_bcv: 1,
       referencia: 'REF003',
-      fecha: '2026-08-18',
+      fecha: '2026-08-18T12:00:00.000Z',
       usuario_id: userId,
     })
     const cancelled = cancelPayment(testDb.db, payment.id, { anulado_por: userId })

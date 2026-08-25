@@ -349,8 +349,9 @@ describe('backup service (WU14)', () => {
       const examId = createExam(testDb.db, `EXP${fecha.replace(/-/g, '')}`, 300)
       const ordenId = createOrder(testDb.db, pacienteId, [examId])
       // createOrder leaves fecha_solicitud at the current timestamp; pin it to
-      // the seeded date so the date-range filter is actually exercised.
-      testDb.db.prepare('UPDATE ordenes SET fecha_solicitud = ? WHERE id = ?').run(fecha, ordenId)
+      // the seeded date (noon, so the UTC→local read stays on the same day in
+      // any timezone) so the date-range filter is actually exercised.
+      testDb.db.prepare('UPDATE ordenes SET fecha_solicitud = ? WHERE id = ?').run(`${fecha} 12:00:00`, ordenId)
       return ordenId
     }
 

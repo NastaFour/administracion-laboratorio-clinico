@@ -64,7 +64,7 @@ describe('payments IPC', () => {
         orden_id: ordenId,
         metodo: PAYMENT_METHOD.EFECTIVO,
         monto_bs: 100,
-        fecha: '2026-08-18',
+        fecha: '2026-08-18T12:00:00.000Z',
       })
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.error.code).toBe('PERMISSION_DENIED')
@@ -95,7 +95,7 @@ describe('payments IPC', () => {
       setBcvRate(testDb.db, 950, adminId)
       const payment = await handleRecordPayment(
         testDb.db,
-        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.TRANSFERENCIA, monto_bs: 0, monto_usd: 10, referencia: 'USD-1', fecha: '2026-08-18' },
+        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.TRANSFERENCIA, monto_bs: 0, monto_usd: 10, referencia: 'USD-1', fecha: '2026-08-18T12:00:00.000Z' },
         makeSession('recepcion', recepcionId),
       )
       expect(payment.monto_bs).toBe(9500)
@@ -107,7 +107,7 @@ describe('payments IPC', () => {
       await expect(
         handleRecordPayment(
           testDb.db,
-          { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.TRANSFERENCIA, monto_bs: 0, monto_usd: 10, referencia: null, fecha: '2026-08-18' },
+          { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.TRANSFERENCIA, monto_bs: 0, monto_usd: 10, referencia: null, fecha: '2026-08-18T12:00:00.000Z' },
           makeSession('recepcion', recepcionId),
         ),
       ).rejects.toThrow(ERROR_CODES.MISSING_BCV_RATE)
@@ -116,7 +116,7 @@ describe('payments IPC', () => {
     it('records a Bs-only payment without a rate and audits pago.registrado', async () => {
       const payment = await handleRecordPayment(
         testDb.db,
-        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18' },
+        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18T12:00:00.000Z' },
         makeSession('recepcion', recepcionId),
       )
       expect(payment.monto_bs).toBe(400)
@@ -131,7 +131,7 @@ describe('payments IPC', () => {
     it('cancels a payment and audits pago.anulado with the motive', async () => {
       const payment = await handleRecordPayment(
         testDb.db,
-        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18' },
+        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18T12:00:00.000Z' },
         makeSession('recepcion', recepcionId),
       )
       const cancelled = await handleCancelPayment(
@@ -154,7 +154,7 @@ describe('payments IPC', () => {
     it('returns the order balance', async () => {
       await handleRecordPayment(
         testDb.db,
-        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18' },
+        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18T12:00:00.000Z' },
         makeSession('recepcion', recepcionId),
       )
       const balance = handleBalance(testDb.db, { ordenId })
@@ -191,7 +191,7 @@ describe('payments IPC', () => {
     it('runs the cierre and returns a printable receipt', async () => {
       await handleRecordPayment(
         testDb.db,
-        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18' },
+        { orden_id: ordenId, cuenta_id: null, metodo: PAYMENT_METHOD.EFECTIVO, monto_bs: 400, monto_usd: 0, referencia: null, fecha: '2026-08-18T12:00:00.000Z' },
         makeSession('recepcion', recepcionId),
       )
       const cierre = await handleRunCierre(

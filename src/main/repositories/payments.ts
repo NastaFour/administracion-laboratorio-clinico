@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 import type { Balance, Payment, PaymentMethod, RecordPaymentRequest } from '@/shared/contracts'
-import { toBoolean, toIsoString, toPaymentMethod } from './helpers'
+import { toBoolean, toIsoString, toLocalDateIso, toPaymentMethod } from './helpers'
 import { round2 } from '../services/payments'
 
 export function rowToPayment(row: Record<string, unknown>): Payment {
@@ -13,7 +13,7 @@ export function rowToPayment(row: Record<string, unknown>): Payment {
     monto_usd: row.monto_usd as number,
     tasa_bcv: row.tasa_bcv as number,
     referencia: (row.referencia as string | null | undefined) ?? null,
-    fecha: (row.fecha as string).slice(0, 10),
+    fecha: toLocalDateIso(row.fecha) ?? (row.fecha as string).slice(0, 10),
     usuario_id: row.usuario_id as number,
     anulado: toBoolean(row.anulado as number | null | undefined),
     anulado_por: (row.anulado_por as number | null | undefined) ?? null,
@@ -102,7 +102,7 @@ export function getPaymentMethodTotals(
   const rows = db
     .prepare(
       `SELECT metodo, COALESCE(SUM(monto_bs), 0) as bs, COALESCE(SUM(monto_usd), 0) as usd
-       FROM pagos WHERE date(fecha) = ? AND anulado = 0 GROUP BY metodo`,
+       FROM pagos WHERE date(fecha, 'localtime') = ? AND anulado = 0 GROUP BY metodo`,
     )
     .all(fecha) as Array<{ metodo: string; bs: number; usd: number }>
   const totals: Record<PaymentMethod, { bs: number; usd: number }> = {

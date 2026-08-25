@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3'
 import type { CreateOrderRequest, Order, OrderExam, OrderFilters, OrderWithExams, UpdateOrderRequest } from '@/shared/contracts'
 import { ERROR_CODES } from '@/shared/contracts'
-import { fromBoolean, toBoolean, toIsoString, toOrderStatus } from './helpers'
+import { fromBoolean, toBoolean, toIsoString, toLocalDateIso, toOrderStatus } from './helpers'
 import { getExam } from './catalog'
 
 export function rowToOrder(row: Record<string, unknown>): Order {
@@ -17,7 +17,7 @@ export function rowToOrder(row: Record<string, unknown>): Order {
     anulada: toBoolean(row.anulada as number | null | undefined),
     motivo_anulacion: (row.motivo_anulacion as string | null | undefined) ?? null,
     cerrada: toBoolean(row.cerrada as number | null | undefined),
-    fecha: (row.fecha_solicitud as string).slice(0, 10),
+    fecha: toLocalDateIso(row.fecha_solicitud) ?? (row.fecha_solicitud as string).slice(0, 10),
     creado_en: toIsoString(row.fecha_solicitud) ?? (row.fecha_solicitud as string),
   }
 }
@@ -87,11 +87,11 @@ export function listOrders(db: Database.Database, filters: OrderFilters = {}): O
     values.push(filters.estatus)
   }
   if (filters.desde !== undefined) {
-    conditions.push('date(fecha_solicitud) >= ?')
+    conditions.push('date(fecha_solicitud, \'localtime\') >= ?')
     values.push(filters.desde)
   }
   if (filters.hasta !== undefined) {
-    conditions.push('date(fecha_solicitud) <= ?')
+    conditions.push('date(fecha_solicitud, \'localtime\') <= ?')
     values.push(filters.hasta)
   }
   if (filters.pendientePago !== undefined) {

@@ -154,7 +154,7 @@ describe('orders service', () => {
       monto_bs: 100,
       monto_usd: 0,
       referencia: null,
-      fecha: '2026-08-18',
+      fecha: '2026-08-18T12:00:00.000Z',
       usuario_id: 1,
     })
     const delivered = await deliverOrderService(testDb.db, created.id, fakeSession())

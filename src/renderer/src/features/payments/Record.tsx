@@ -45,7 +45,7 @@ export function PaymentRecordForm({ ordenId, rate, onSubmit, onCancel }: Payment
       monto_bs: bsAmount,
       monto_usd: usdAmount,
       referencia: referencia.trim() || null,
-      fecha: new Date().toISOString().slice(0, 10),
+      fecha: new Date().toISOString(),
     })
     setSubmitting(false)
 

@@ -49,12 +49,12 @@ export function getTodayKpis(db: Database.Database, fecha?: string): TodayKpi {
   const day = fecha ?? localDateIso()
 
   const ordersToday = db
-    .prepare('SELECT COUNT(*) AS n FROM ordenes WHERE date(fecha_solicitud) = ? AND anulada = 0')
+    .prepare('SELECT COUNT(*) AS n FROM ordenes WHERE date(fecha_solicitud, \'localtime\') = ? AND anulada = 0')
     .get(day) as { n: number }
 
   const revenueToday = db
     .prepare(
-      'SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha) = ? AND anulado = 0',
+      'SELECT COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd FROM pagos WHERE date(fecha, \'localtime\') = ? AND anulado = 0',
     )
     .get(day) as { bs: number; usd: number }
 
@@ -68,7 +68,7 @@ export function getTodayKpis(db: Database.Database, fecha?: string): TodayKpi {
        FROM orden_examenes oe
        JOIN ordenes o ON o.id = oe.orden_id
        JOIN examenes_catalogo ec ON ec.id = oe.examen_id
-       WHERE date(o.fecha_solicitud) = ? AND o.anulada = 0
+       WHERE date(o.fecha_solicitud, 'localtime') = ? AND o.anulada = 0
        GROUP BY ec.categoria
        ORDER BY ec.categoria`,
     )
@@ -109,7 +109,8 @@ export function getDebtors(db: Database.Database, fechaCorte?: string): DebtorBu
   const corte = fechaCorte ?? localDateIso()
   const rows = db
     .prepare(
-      `SELECT o.id AS orden_id, o.paciente_id, o.credito, o.fecha_solicitud, o.precio_total,
+      `SELECT o.id AS orden_id, o.paciente_id, o.credito, o.precio_total,
+              date(o.fecha_solicitud, 'localtime') AS fecha_local,
               p.nombres, p.apellidos,
               (SELECT COALESCE(SUM(monto_bs), 0) FROM pagos pg WHERE pg.orden_id = o.id AND pg.anulado = 0) AS pagado_bs
        FROM ordenes o
@@ -120,7 +121,7 @@ export function getDebtors(db: Database.Database, fechaCorte?: string): DebtorBu
     orden_id: number
     paciente_id: number
     credito: number
-    fecha_solicitud: string
+    fecha_local: string
     precio_total: number
     nombres: string
     apellidos: string
@@ -134,7 +135,7 @@ export function getDebtors(db: Database.Database, fechaCorte?: string): DebtorBu
       continue
     }
     const daysRaw = Math.floor(
-      (new Date(`${corte}T00:00:00`).getTime() - new Date(`${row.fecha_solicitud.slice(0, 10)}T00:00:00`).getTime()) /
+      (new Date(`${corte}T00:00:00`).getTime() - new Date(`${row.fecha_local}T00:00:00`).getTime()) /
         (1000 * 60 * 60 * 24),
     )
     const diasPendientes = Math.max(0, daysRaw)
@@ -169,7 +170,7 @@ export function getStats(db: Database.Database, desde: string, hasta: string): S
        FROM orden_examenes oe
        JOIN ordenes o ON o.id = oe.orden_id
        JOIN examenes_catalogo ec ON ec.id = oe.examen_id
-       WHERE date(o.fecha_solicitud) BETWEEN ? AND ? AND o.anulada = 0
+       WHERE date(o.fecha_solicitud, 'localtime') BETWEEN ? AND ? AND o.anulada = 0
        GROUP BY ec.id, ec.nombre
        ORDER BY cantidad DESC, ingreso_bs DESC, ec.nombre
        LIMIT 5`,
@@ -186,7 +187,7 @@ export function getStats(db: Database.Database, desde: string, hasta: string): S
     .prepare(
       `SELECT strftime('%Y-%m', fecha) AS mes, COALESCE(SUM(monto_bs), 0) AS bs, COALESCE(SUM(monto_usd), 0) AS usd
        FROM pagos
-       WHERE anulado = 0 AND date(fecha) BETWEEN ? AND ?
+       WHERE anulado = 0 AND date(fecha, 'localtime') BETWEEN ? AND ?
        GROUP BY mes`,
     )
     .all(desde, hasta) as Array<{ mes: string; bs: number; usd: number }>
@@ -237,7 +238,7 @@ export function getTrends(db: Database.Database, pacienteId: number, parametroId
 
   const points = db
     .prepare(
-      `SELECT date(o.fecha_solicitud) AS fecha, r.valor_numerico AS valor
+      `SELECT date(o.fecha_solicitud, 'localtime') AS fecha, r.valor_numerico AS valor
        FROM resultados r
        JOIN orden_examenes oe ON oe.id = r.orden_examen_id
        JOIN ordenes o ON o.id = oe.orden_id

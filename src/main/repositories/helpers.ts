@@ -39,17 +39,48 @@ export function stringifyJson<T>(value: T | null | undefined): string | null {
 }
 
 /**
+ * SQLite `CURRENT_TIMESTAMP` stores UTC without a zone marker (e.g.
+ * `2026-08-25 01:39:24`). Treat that format as a UTC instant so JS date math
+ * and local-date conversion are correct; ISO inputs (with `Z`/offset) pass
+ * through untouched.
+ */
+const DB_UTC_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/
+
+function asUtcInstant(value: string): string {
+  return DB_UTC_RE.test(value) ? value.replace(' ', 'T') + 'Z' : value
+}
+
+/**
  * Coerce an unknown value into a Date ISO string, or null.
  */
 export function toIsoString(value: unknown): string | null {
   if (value === null || value === undefined) {
     return null
   }
-  const date = new Date(value as string | number | Date)
+  const date = new Date(typeof value === 'string' ? asUtcInstant(value) : (value as string | number | Date))
   if (Number.isNaN(date.getTime())) {
     return null
   }
   return date.toISOString()
+}
+
+/**
+ * Local `YYYY-MM-DD` for a stored timestamp. Stored values are UTC (schema
+ * defaults and ISO writes), so a naive DB string is parsed as UTC first —
+ * never as local wall-clock. Returns null when the value is not a date.
+ */
+export function toLocalDateIso(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  const date = new Date(typeof value === 'string' ? asUtcInstant(value) : (value as string | number | Date))
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export function toSex(value: string): Sex {

@@ -31,11 +31,11 @@ export function listAuditEntries(db: Database.Database, filters: AuditFilters = 
     values.push(filters.entidad)
   }
   if (filters.desde !== undefined) {
-    conditions.push('date(creado_en) >= ?')
+    conditions.push('date(creado_en, \'localtime\') >= ?')
     values.push(filters.desde)
   }
   if (filters.hasta !== undefined) {
-    conditions.push('date(creado_en) <= ?')
+    conditions.push('date(creado_en, \'localtime\') <= ?')
     values.push(filters.hasta)
   }
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
