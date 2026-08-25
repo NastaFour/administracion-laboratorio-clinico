@@ -140,19 +140,77 @@ function insertOrderExams(db: Database.Database, ordenId: number, examenes: Orde
 export function createOrder(db: Database.Database, input: CreateOrderRequest): OrderWithExams {
   const resolved = resolveExamPrices(db, input.examenes)
   const total = computeTotal(resolved)
-  const result = db
-    .prepare(
-      `INSERT INTO ordenes (paciente_id, medico_id, empresa_id, estatus, observaciones, precio_total, estatus_pago)
-       VALUES (?, ?, ?, 'Pendiente', ?, ?, 'Pendiente')`,
-    )
-    .run(input.paciente_id, input.medico_id, input.empresa_id, input.observaciones, total)
-  const id = Number(result.lastInsertRowid)
-  insertOrderExams(db, id, resolved)
+  // Atomic write (W-JD4): the order row and its exam lines commit together.
+  const applyCreate = db.transaction((): number => {
+    const result = db
+      .prepare(
+        `INSERT INTO ordenes (paciente_id, medico_id, empresa_id, estatus, observaciones, precio_total, estatus_pago)
+         VALUES (?, ?, ?, 'Pendiente', ?, ?, 'Pendiente')`,
+      )
+      .run(input.paciente_id, input.medico_id, input.empresa_id, input.observaciones, total)
+    const id = Number(result.lastInsertRowid)
+    insertOrderExams(db, id, resolved)
+    return id
+  })
+  const id = applyCreate()
   const order = getOrder(db, id)
   if (!order) {
     throw new Error('Order was not created')
   }
   return order
+}
+
+interface ExistingExamRow {
+  id: number
+  examen_id: number
+  /** 1 when muestras or resultados rows reference this orden_examenes row. */
+  referenced: number
+}
+
+/**
+ * Existing exam lines of an order annotated with their clinical references.
+ * `muestras.orden_examen_id` (migration 002) and `resultados.orden_examen_id`
+ * (migration 004) both FK into orden_examenes, so referenced rows can never be
+ * deleted — they must survive edits in place.
+ */
+const EXISTING_EXAM_ROWS_SQL = `
+  SELECT oe.id,
+         oe.examen_id,
+         CASE WHEN EXISTS(SELECT 1 FROM muestras WHERE orden_examen_id = oe.id)
+                OR EXISTS(SELECT 1 FROM resultados WHERE orden_examen_id = oe.id)
+              THEN 1 ELSE 0 END AS referenced
+  FROM orden_examenes oe
+  WHERE oe.orden_id = ?`
+
+function reconcileOrderExamLines(
+  db: Database.Database,
+  ordenId: number,
+  examenes: OrderExam[],
+): void {
+  const keepStmt = db.prepare(
+    'UPDATE orden_examenes SET precio = ?, tercerizado = ?, proveedor = ?, comentario = ? WHERE id = ?',
+  )
+  const deleteStmt = db.prepare('DELETE FROM orden_examenes WHERE id = ?')
+  const insertStmt = db.prepare(
+    'INSERT INTO orden_examenes (orden_id, examen_id, precio, tercerizado, proveedor, comentario) VALUES (?, ?, ?, ?, ?, ?)',
+  )
+
+  const kept = new Set<number>()
+  for (const row of db.prepare(EXISTING_EXAM_ROWS_SQL).all(ordenId) as ExistingExamRow[]) {
+    const incoming = examenes.find((exam) => exam.examen_id === row.examen_id)
+    if (incoming) {
+      // Keep the row identity (samples/results may point at it) and refresh its data.
+      keepStmt.run(incoming.precio, fromBoolean(incoming.tercerizado), incoming.proveedor, incoming.comentario, row.id)
+      kept.add(row.examen_id)
+    } else {
+      deleteStmt.run(row.id)
+    }
+  }
+  for (const exam of examenes) {
+    if (!kept.has(exam.examen_id)) {
+      insertStmt.run(ordenId, exam.examen_id, exam.precio, fromBoolean(exam.tercerizado), exam.proveedor, exam.comentario)
+    }
+  }
 }
 
 export function updateOrder(db: Database.Database, input: UpdateOrderRequest): OrderWithExams {
@@ -165,11 +223,26 @@ export function updateOrder(db: Database.Database, input: UpdateOrderRequest): O
   }
   const resolved = resolveExamPrices(db, input.examenes)
   const total = computeTotal(resolved)
-  db.prepare(
-    'UPDATE ordenes SET paciente_id = ?, medico_id = ?, empresa_id = ?, observaciones = ?, precio_total = ? WHERE id = ?',
-  ).run(input.paciente_id, input.medico_id, input.empresa_id, input.observaciones, total, input.id)
-  db.prepare('DELETE FROM orden_examenes WHERE orden_id = ?').run(input.id)
-  insertOrderExams(db, input.id, resolved)
+
+  const applyUpdate = db.transaction(() => {
+    // Removing an exam that already carries samples/results would orphan those
+    // records (FK violation) — reject with a typed error BEFORE any write so
+    // the caller gets CONFLICT instead of a raw SQLite constraint failure.
+    for (const row of db.prepare(EXISTING_EXAM_ROWS_SQL).all(input.id) as ExistingExamRow[]) {
+      const removed = !resolved.some((exam) => exam.examen_id === row.examen_id)
+      if (removed && row.referenced === 1) {
+        throw new Error(ERROR_CODES.CONFLICT)
+      }
+    }
+
+    db.prepare(
+      'UPDATE ordenes SET paciente_id = ?, medico_id = ?, empresa_id = ?, observaciones = ?, precio_total = ? WHERE id = ?',
+    ).run(input.paciente_id, input.medico_id, input.empresa_id, input.observaciones, total, input.id)
+
+    reconcileOrderExamLines(db, input.id, resolved)
+  })
+  applyUpdate()
+
   const order = getOrder(db, input.id)
   if (!order) {
     throw new Error('Order not found after update')

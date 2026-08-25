@@ -1,6 +1,15 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
+import { ERROR_CODES } from '@/shared/contracts'
 import { createExam, createPatient, createTestDb, createUser } from './test-helpers'
 import { createOrder, getOrder, listOrders, setOrderAnulada, setOrderCerrada, updateOrder, updateOrderStatus } from './orders'
+
+function seedSampledExamRow(db: Awaited<ReturnType<typeof createTestDb>>['db'], ordenId: number): number {
+  const junction = db.prepare('SELECT id FROM orden_examenes WHERE orden_id = ?').get(ordenId) as { id: number }
+  db.prepare(
+    "INSERT INTO muestras (orden_examen_id, tipo_muestra, codigo, estatus) VALUES (?, 'Sangre', 'M-REG-0001', 'Recolectada')",
+  ).run(junction.id)
+  return junction.id
+}
 
 describe('orders repository', () => {
   let testDb: Awaited<ReturnType<typeof createTestDb>>
@@ -96,6 +105,69 @@ describe('orders repository', () => {
 
     expect(updated.total_bs).toBe(200)
     expect(updated.examenes[0].examen_id).toBe(exam2)
+  })
+
+  it('updates an order whose exam already has a sample, keeping the row identity (S-JD2 regression)', () => {
+    const patient = createPatient(testDb.db, 'V-10000008')
+    const exam1 = createExam(testDb.db, 'EXM10', 100)
+    const created = createOrder(testDb.db, {
+      paciente_id: patient,
+      medico_id: null,
+      empresa_id: null,
+      examenes: [{ examen_id: exam1, precio: 100, tercerizado: false, proveedor: null, comentario: null }],
+      observaciones: null,
+    })
+    const junctionId = seedSampledExamRow(testDb.db, created.id)
+
+    const updated = updateOrder(testDb.db, {
+      id: created.id,
+      paciente_id: patient,
+      medico_id: null,
+      empresa_id: null,
+      examenes: [{ examen_id: exam1, precio: 100, tercerizado: false, proveedor: null, comentario: null }],
+      observaciones: 'Edited after sampling',
+    })
+
+    expect(updated.observaciones).toBe('Edited after sampling')
+    expect(updated.examenes).toHaveLength(1)
+    // The SAME orden_examenes row survived (no delete+reinsert), so the
+    // sample's FK still resolves to it.
+    expect(updated.examenes[0].id).toBe(junctionId)
+    const sample = testDb.db.prepare('SELECT orden_examen_id FROM muestras WHERE codigo = ?').get('M-REG-0001') as {
+      orden_examen_id: number
+    }
+    expect(sample.orden_examen_id).toBe(junctionId)
+  })
+
+  it('rejects removing an exam that has samples/results with a typed CONFLICT (S-JD2 regression)', () => {
+    const patient = createPatient(testDb.db, 'V-10000009')
+    const exam1 = createExam(testDb.db, 'EXM11', 100)
+    const exam2 = createExam(testDb.db, 'EXM12', 200)
+    const created = createOrder(testDb.db, {
+      paciente_id: patient,
+      medico_id: null,
+      empresa_id: null,
+      examenes: [{ examen_id: exam1, precio: 100, tercerizado: false, proveedor: null, comentario: null }],
+      observaciones: null,
+    })
+    seedSampledExamRow(testDb.db, created.id)
+
+    expect(() =>
+      updateOrder(testDb.db, {
+        id: created.id,
+        paciente_id: patient,
+        medico_id: null,
+        empresa_id: null,
+        examenes: [{ examen_id: exam2, precio: 200, tercerizado: false, proveedor: null, comentario: null }],
+        observaciones: null,
+      }),
+    ).toThrow(ERROR_CODES.CONFLICT)
+
+    // Nothing was written: the order keeps its original exam line and total.
+    const untouched = getOrder(testDb.db, created.id)
+    expect(untouched?.examenes).toHaveLength(1)
+    expect(untouched?.examenes[0].examen_id).toBe(exam1)
+    expect(untouched?.total_bs).toBe(100)
   })
 
   it('rejects edits on closed orders', () => {
