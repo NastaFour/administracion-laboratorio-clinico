@@ -66,49 +66,52 @@ describe('CierrePage', () => {
       expect(screen.getByTestId('cierre-summary')).toBeInTheDocument()
     })
 
-    // Stub the print frame's content window BEFORE clicking Imprimir: the
-    // component must push the HTML into the srcdoc iframe and invoke
-    // contentWindow.print() on it once the frame has loaded — window.open is
-    // denied in production.
-    const iframe = document.querySelector('iframe[title="Cierre de caja"]') as HTMLIFrameElement
-    expect(iframe).not.toBeNull()
-    const focusSpy = vi.fn()
-    const printSpy = vi.fn()
-    Object.defineProperty(iframe, 'contentWindow', { configurable: true, value: { focus: focusSpy, print: printSpy } })
-    // Report the frame as still loading so the component must attach its
-    // once-only load listener; the test dispatches `load` to simulate the
-    // srcdoc document finishing (jsdom does not fire it on its own).
-    Object.defineProperty(iframe, 'contentDocument', { configurable: true, value: { readyState: 'loading' } })
-
-    // First click: writes the HTML into the iframe, then prints only after
-    // load. act() flushes handlePrint's promise and the print effect, so the
-    // once-only load listener is guaranteed to be attached before dispatching.
+    // First click: a fresh srcdoc iframe mounts; printing must wait for its
+    // load event (the srcdoc navigation is asynchronous, so there is no
+    // synchronous readyState fast path in the component).
     await act(async () => {
       fireEvent.click(screen.getByTestId('cierre-print'))
     })
 
     expect(mockPrint).toHaveBeenCalledWith({ fecha: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) })
-    expect(iframe.getAttribute('srcdoc')).toBe('<html>Cierre de Caja</html>')
-    // No printing before the load event fires.
-    expect(printSpy).not.toHaveBeenCalled()
+    const frame1 = document.querySelector('iframe[title="Cierre de caja"]') as HTMLIFrameElement
+    expect(frame1).not.toBeNull()
+    expect(frame1.getAttribute('srcdoc')).toBe('<html>Cierre de Caja</html>')
 
-    fireEvent(iframe, new Event('load'))
+    const focusSpy1 = vi.fn()
+    const printSpy1 = vi.fn()
+    Object.defineProperty(frame1, 'contentWindow', { configurable: true, value: { focus: focusSpy1, print: printSpy1 } })
 
-    expect(printSpy).toHaveBeenCalledTimes(1)
-    expect(focusSpy).toHaveBeenCalledTimes(1)
+    // No printing before the load event fires (jsdom does not fire it on its own).
+    expect(printSpy1).not.toHaveBeenCalled()
 
-    // Second click with identical HTML must still print (no Object.is
-    // bail-out): a fresh load cycle ends in a second contentWindow.print().
+    await act(async () => {
+      fireEvent.load(frame1)
+    })
+
+    expect(printSpy1).toHaveBeenCalledTimes(1)
+    expect(focusSpy1).toHaveBeenCalledTimes(1)
+
+    // Second click with identical HTML must still print: the key change
+    // remounts a brand-new iframe whose load ends in a second print().
     await act(async () => {
       fireEvent.click(screen.getByTestId('cierre-print'))
     })
-
     expect(mockPrint).toHaveBeenCalledTimes(2)
 
-    fireEvent(iframe, new Event('load'))
+    const frame2 = document.querySelector('iframe[title="Cierre de caja"]') as HTMLIFrameElement
+    expect(frame2).not.toBeNull()
+    expect(frame2).not.toBe(frame1)
+    const focusSpy2 = vi.fn()
+    const printSpy2 = vi.fn()
+    Object.defineProperty(frame2, 'contentWindow', { configurable: true, value: { focus: focusSpy2, print: printSpy2 } })
 
-    expect(printSpy).toHaveBeenCalledTimes(2)
-    expect(focusSpy).toHaveBeenCalledTimes(2)
+    await act(async () => {
+      fireEvent.load(frame2)
+    })
+
+    expect(printSpy2).toHaveBeenCalledTimes(1)
+    expect(focusSpy2).toHaveBeenCalledTimes(1)
     expect(window.open).not.toHaveBeenCalled()
   })
 })

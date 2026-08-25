@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import type { SyntheticEvent } from 'react'
 import { useCierre } from './useCierre'
 import { METHOD_LABELS, METHOD_OPTIONS } from '../payments/methods'
 import { todayLocalDateIso } from '../../lib/dates'
@@ -24,12 +25,11 @@ function formatDateTime(iso: string | null): string {
 export function CierrePage() {
   // Default to the LOCAL business day — never the UTC day from toISOString().
   const [fecha, setFecha] = useState(todayLocalDateIso())
+  // printHtml holds the last fetched receipt; printSeq bumps on every Imprimir
+  // click and acts as the iframe key, so each click mounts a FRESH srcdoc
+  // iframe whose load event fires only once the receipt document is ready.
   const [printHtml, setPrintHtml] = useState<string | null>(null)
-  // Bumped on every Imprimir click: keying the print effect on this counter
-  // (not on the HTML string) makes repeated clicks re-trigger printing even
-  // when the receipt HTML is identical between clicks.
   const [printSeq, setPrintSeq] = useState(0)
-  const iframeRef = useRef<HTMLIFrameElement>(null)
   const { cierre, loading, error, run, print } = useCierre(fecha)
 
   const handleRun = () => {
@@ -45,46 +45,27 @@ export function CierrePage() {
     setPrintSeq((s) => s + 1)
   }
 
-  useEffect(() => {
-    // Skip the initial mount and any run without pending HTML; printSeq alone
-    // drives re-runs so every click prints, even with identical HTML.
-    if (printSeq === 0 || printHtml === null) return
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    const doPrint = () => {
-      const win = iframe.contentWindow
-      if (!win) return
-      win.focus()
-      win.print()
-    }
-
-    iframe.srcdoc = printHtml
-
-    // If the frame already finished loading its document, print now;
-    // otherwise wait for the load event so the receipt never prints blank.
-    if (iframe.contentDocument?.readyState === 'complete') {
-      doPrint()
-      return
-    }
-
-    const onLoad = () => doPrint()
-    iframe.addEventListener('load', onLoad, { once: true })
-    return () => {
-      iframe.removeEventListener('load', onLoad)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- printSeq alone triggers re-runs; printHtml is read as the latest pending HTML.
-  }, [printSeq])
+  const handlePrintFrameLoad = (event: SyntheticEvent<HTMLIFrameElement>) => {
+    const frame = event.currentTarget
+    const win = frame.contentWindow
+    if (!win) return
+    win.focus()
+    win.print()
+  }
 
   return (
     <div className="space-y-6">
-      <iframe
-        ref={iframeRef}
-        title="Cierre de caja"
-        className="absolute h-0 w-0 border-0"
-        tabIndex={-1}
-        aria-hidden="true"
-      />
+      {printSeq > 0 && printHtml !== null && (
+        <iframe
+          key={printSeq}
+          srcDoc={printHtml}
+          onLoad={handlePrintFrameLoad}
+          title="Cierre de caja"
+          className="absolute h-0 w-0 border-0"
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+      )}
       <div>
         <h2 className="text-xl font-semibold text-ink-900" data-testid="cierre-heading">
           Cierre de caja
