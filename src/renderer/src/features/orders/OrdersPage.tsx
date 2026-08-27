@@ -192,7 +192,7 @@ export function OrdersPage() {
             id="order-status-filter"
             value={filters.estatus}
             onChange={(e) => setFilters((prev) => ({ ...prev, estatus: e.target.value as OrderStatus | '' }))}
-            className="rounded-md border border-paper-300 px-3 py-2 text-ink-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-ink-900 dark:text-ink-950 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           >
             <option value="">Todos</option>
             {Object.values(ORDER_STATUS).map((s) => (
@@ -204,14 +204,14 @@ export function OrdersPage() {
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="order-payment-filter" className="block text-sm font-medium text-ink-700">
+          <label htmlFor="order-payment-filter" className="block text-sm font-medium text-ink-700 dark:text-ink-700">
             Pago
           </label>
           <select
             id="order-payment-filter"
             value={filters.pendientePago}
             onChange={(e) => setFilters((prev) => ({ ...prev, pendientePago: e.target.value as '' | 'true' | 'false' }))}
-            className="rounded-md border border-paper-300 px-3 py-2 text-ink-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-ink-900 dark:text-ink-950 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           >
             <option value="">Todos</option>
             <option value="true">Pendiente</option>

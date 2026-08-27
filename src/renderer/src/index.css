@@ -121,6 +121,7 @@
    Dark Mode Scale Overrides (.dark)
    ========================================================================== */
 .dark {
+  color-scheme: dark;
   /* Warm Clinical Dark Petrol Palette */
   --color-paper-50: #0d151a;
   --color-paper-100: #121c22;
@@ -204,6 +205,20 @@
 
 .dark .divide-paper-200 > * + * {
   border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Native select & option dark mode overrides */
+select {
+  color-scheme: light;
+}
+
+.dark select {
+  color-scheme: dark;
+}
+
+.dark select option {
+  background-color: var(--color-paper-100);
+  color: #ffffff;
 }
 
 /* ==========================================================================
