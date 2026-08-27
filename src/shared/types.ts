@@ -91,6 +91,7 @@ export interface LabCoreAPI {
     cancel: (req: RequestOf<IpcChannels['payments:cancel']>) => Promise<ResponseOf<IpcChannels['payments:cancel']>>
     listForOrder: (req: RequestOf<IpcChannels['payments:listForOrder']>) => Promise<ResponseOf<IpcChannels['payments:listForOrder']>>
     balance: (req: RequestOf<IpcChannels['payments:balance']>) => Promise<ResponseOf<IpcChannels['payments:balance']>>
+    listAll: (req: RequestOf<IpcChannels['payments:listAll']>) => Promise<ResponseOf<IpcChannels['payments:listAll']>>
   }
   cierre: {
     run: (req: RequestOf<IpcChannels['cierre:run']>) => Promise<ResponseOf<IpcChannels['cierre:run']>>

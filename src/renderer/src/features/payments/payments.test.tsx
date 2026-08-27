@@ -15,6 +15,7 @@ const mockApi = {
       ok: true,
       data: { orden_id: 1, total_bs: 1000, pagado_bs: 0, saldo_bs: 1000, total_usd: 0, pagado_usd: 0, saldo_usd: 0 },
     }),
+    listAll: vi.fn().mockResolvedValue({ ok: true, data: [] }),
   },
   config: {
     getBcvRate: vi.fn().mockResolvedValue({ ok: true, data: { tasa: 950, actualizado_en: '2026-08-18T10:00:00.000Z' } }),
@@ -181,6 +182,55 @@ describe('PaymentsPage workflows and toast feedback (Fix A6, A7)', () => {
         expect.objectContaining({ id: 42, motivo: 'Doble cargo en punto' }),
       )
       expect(screen.getByText('Pago anulado exitosamente.')).toBeInTheDocument()
+    })
+  })
+
+  it('renders global payments table with patient details, debt, and opens prefilled payment modal on Abonar click', async () => {
+    const mockGlobalPayments = [
+      {
+        id: 101,
+        ordenId: 55,
+        pacienteId: 10,
+        pacienteNombre: 'María Gómez',
+        pacienteCedula: 'V-20123456',
+        metodo: 'pago_movil',
+        monto_bs: 300,
+        monto_usd: 7.5,
+        tasa_bcv: 40,
+        fecha: '2026-08-27',
+        cajero: 'Cajera 1',
+        totalOrden: 1000,
+        saldoActualOrden: 700,
+        anulado: false,
+      },
+    ]
+    mockApi.payments.listAll.mockResolvedValueOnce({ ok: true, data: mockGlobalPayments })
+
+    render(
+      <ToastProvider>
+        <PaymentsPage />
+      </ToastProvider>,
+    )
+
+    // Check KPIs
+    expect(screen.getByText(/Recaudado Hoy/i)).toBeInTheDocument()
+    expect(screen.getByText(/Por Cobrar/i)).toBeInTheDocument()
+
+    // Table rows
+    await waitFor(() => {
+      expect(screen.getByText('María Gómez')).toBeInTheDocument()
+      expect(screen.getByText('V-20123456')).toBeInTheDocument()
+      expect(screen.getByText('#55')).toBeInTheDocument()
+      expect(screen.getByText(/Pago móvil/i)).toBeInTheDocument()
+      expect(screen.getByText('Cajera 1')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Abonar' })).toBeInTheDocument()
+    })
+
+    // Click "Abonar" on order #55
+    fireEvent.click(screen.getByRole('button', { name: 'Abonar' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Registrar Cobro · Orden #55/i)).toBeInTheDocument()
     })
   })
 })

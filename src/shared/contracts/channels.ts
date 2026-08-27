@@ -109,6 +109,7 @@ export const CHANNEL_ALLOWLIST = Object.freeze([
   'payments:cancel',
   'payments:listForOrder',
   'payments:balance',
+  'payments:listAll',
   'cierre:run',
   'cierre:print',
   'config:getBcvRate',

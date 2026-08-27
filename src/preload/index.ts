@@ -88,6 +88,7 @@ const api: LabCoreAPI = {
     'payments:cancel': paymentsChannels['payments:cancel'],
     'payments:listForOrder': paymentsChannels['payments:listForOrder'],
     'payments:balance': paymentsChannels['payments:balance'],
+    'payments:listAll': paymentsChannels['payments:listAll'],
   }) as LabCoreAPI['payments'],
   cierre: makeDomain({
     'cierre:run': paymentsChannels['cierre:run'],

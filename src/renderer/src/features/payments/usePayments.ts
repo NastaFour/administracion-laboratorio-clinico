@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Balance, BcvRate, Payment, RecordPaymentRequest } from '@/shared/contracts'
+import type { Balance, BcvRate, ListAllPaymentsRequest, Payment, PaymentListItem, RecordPaymentRequest } from '@/shared/contracts'
 
 function mapError(code: string): string {
   const messages: Record<string, string> = {
@@ -100,4 +100,34 @@ export function useBcvRate() {
   }, [])
 
   return { rate }
+}
+
+/** Load global payments list with optional period, debtors and query filters. */
+export function useAllPayments(filters: ListAllPaymentsRequest = {}) {
+  const [payments, setPayments] = useState<PaymentListItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const { desde, hasta, soloDeudores, query } = filters
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await window.api.payments.listAll({ desde, hasta, soloDeudores, query })
+      if (!result.ok) {
+        setError(mapError(result.error.code))
+        return
+      }
+      setPayments(result.data)
+    } finally {
+      setLoading(false)
+    }
+  }, [desde, hasta, soloDeudores, query])
+
+  useEffect(() => {
+    void fetch()
+  }, [fetch])
+
+  return { payments, loading, error, refetch: fetch }
 }

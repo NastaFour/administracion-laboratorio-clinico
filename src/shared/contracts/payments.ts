@@ -49,6 +49,34 @@ export const cancelPaymentRequestSchema = z.object({
 
 export type CancelPaymentRequest = z.infer<typeof cancelPaymentRequestSchema>
 
+export const listAllPaymentsRequestSchema = z.object({
+  desde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  hasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  soloDeudores: z.boolean().optional(),
+  query: z.string().optional(),
+})
+
+export type ListAllPaymentsRequest = z.infer<typeof listAllPaymentsRequestSchema>
+
+export const paymentListItemSchema = z.object({
+  id: z.number().int(),
+  ordenId: z.number().int(),
+  pacienteId: z.number().int(),
+  pacienteNombre: z.string(),
+  pacienteCedula: z.string(),
+  metodo: paymentMethodSchema,
+  monto_bs: z.number(),
+  monto_usd: z.number(),
+  tasa_bcv: z.number(),
+  fecha: z.string(),
+  cajero: z.string(),
+  totalOrden: z.number(),
+  saldoActualOrden: z.number(),
+  anulado: z.boolean(),
+})
+
+export type PaymentListItem = z.infer<typeof paymentListItemSchema>
+
 export const balanceSchema = z.object({
   orden_id: idSchema,
   total_bs: positiveMoneySchema,
@@ -97,6 +125,10 @@ export const paymentsChannels = {
   'payments:balance': {
     request: z.object({ ordenId: idSchema }),
     response: envelopeSchema(balanceSchema),
+  },
+  'payments:listAll': {
+    request: listAllPaymentsRequestSchema,
+    response: envelopeSchema(z.array(paymentListItemSchema)),
   },
   'cierre:run': {
     request: z.object({ fecha: isoDateOnlySchema }),

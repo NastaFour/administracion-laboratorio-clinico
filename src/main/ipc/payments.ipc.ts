@@ -1,11 +1,11 @@
 import type Database from 'better-sqlite3'
-import { paymentsChannels, ROLES, type BcvRate, type Balance, type CancelPaymentRequest, type Payment, type RecordPaymentRequest, type Session } from '@/shared/contracts'
+import { paymentsChannels, ROLES, type BcvRate, type Balance, type CancelPaymentRequest, type ListAllPaymentsRequest, type Payment, type PaymentListItem, type RecordPaymentRequest, type Session } from '@/shared/contracts'
 import { ERROR_CODES } from '@/shared/contracts'
 import { handle } from './register'
 import { writeAudit } from '../services/audit'
 import { resolveBsAmount } from '../services/payments'
 import { runCierreService, cierrePrintService } from '../services/cierre'
-import { cancelPayment, getBalance, getPayment, listPaymentsByOrder, recordPayment } from '../repositories/payments'
+import { cancelPayment, getBalance, getPayment, listAllPayments, listPaymentsByOrder, recordPayment } from '../repositories/payments'
 import { getBcvRate, setBcvRate } from '../repositories/config'
 
 const PAYMENT_ROLES = [ROLES.ADMIN, ROLES.RECEPCION]
@@ -77,6 +77,13 @@ export function handleBalance(db: Database.Database, req: { ordenId: number }): 
   return getBalance(db, req.ordenId)
 }
 
+export function handleListAllPayments(
+  db: Database.Database,
+  req: ListAllPaymentsRequest,
+): PaymentListItem[] {
+  return listAllPayments(db, req)
+}
+
 export function handleGetBcvRate(db: Database.Database): BcvRate | null {
   return getBcvRate(db)
 }
@@ -111,6 +118,7 @@ export function registerPaymentsHandlers(db: Database.Database): void {
   handle(db, 'payments:cancel', PAYMENT_ROLES, paymentsChannels['payments:cancel'].request, handleCancelPayment)
   handle(db, 'payments:listForOrder', PAYMENT_ROLES, paymentsChannels['payments:listForOrder'].request, handleListPaymentsForOrder)
   handle(db, 'payments:balance', PAYMENT_ROLES, paymentsChannels['payments:balance'].request, handleBalance)
+  handle(db, 'payments:listAll', PAYMENT_ROLES, paymentsChannels['payments:listAll'].request, handleListAllPayments)
   handle(db, 'config:getBcvRate', PAYMENT_ROLES, paymentsChannels['config:getBcvRate'].request, handleGetBcvRate)
   handle(db, 'config:setBcvRate', ADMIN_ROLES, paymentsChannels['config:setBcvRate'].request, handleSetBcvRate)
   handle(db, 'cierre:run', PAYMENT_ROLES, paymentsChannels['cierre:run'].request, handleRunCierre)
