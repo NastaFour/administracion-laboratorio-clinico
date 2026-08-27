@@ -4,6 +4,7 @@ import { SettingsPage } from './SettingsPage'
 import { Lab } from './Lab'
 import { Billing } from './Billing'
 import { Users } from './Users'
+import { ToastProvider } from '../../components/ui/Toast'
 import { useSessionStore } from '../../stores/useSessionStore'
 import type { Session } from '@/shared/contracts'
 
@@ -55,6 +56,8 @@ const mockApi = {
     setLogo: vi.fn(),
     getPrint: vi.fn(),
     setPrint: vi.fn(),
+    getReportFormat: vi.fn(),
+    setReportFormat: vi.fn(),
     getBcvHistory: vi.fn(),
     getBcvRate: vi.fn(),
     setBcvRate: vi.fn(),
@@ -79,6 +82,8 @@ beforeEach(() => {
   mockApi.config.getBioanalista.mockImplementation(() => ok(bioanalistaPayload))
   mockApi.config.setBioanalista.mockImplementation(() => ok({ ...bioanalistaPayload }))
   mockApi.config.setLogo.mockImplementation(() => ok('data:image/png;base64,QQ=='))
+  mockApi.config.getReportFormat.mockImplementation(() => ok('generico'))
+  mockApi.config.setReportFormat.mockImplementation((req: { formato: 'generico' | 'especializado' }) => ok(req.formato))
   mockApi.config.getBcvHistory.mockImplementation(() =>
     ok([
       { tasa: 960, actualizado_en: '2026-08-20T15:00:00.000Z', usuario_id: 1 },
@@ -102,7 +107,11 @@ afterEach(() => {
 
 describe('SettingsPage (M13.3 split)', () => {
   it('renders the five focused sub-screens instead of a god component', async () => {
-    render(<SettingsPage />)
+    render(
+      <ToastProvider>
+        <SettingsPage />
+      </ToastProvider>,
+    )
     expect(screen.getByTestId('settings-tab-lab')).toBeInTheDocument()
     expect(screen.getByTestId('settings-tab-bioanalista')).toBeInTheDocument()
     expect(screen.getByTestId('settings-tab-billing')).toBeInTheDocument()
@@ -126,7 +135,11 @@ describe('SettingsPage (M13.3 split)', () => {
 
 describe('Lab screen (logo upload N11.3)', () => {
   it('saves the lab configuration', async () => {
-    render(<Lab />)
+    render(
+      <ToastProvider>
+        <Lab />
+      </ToastProvider>,
+    )
     const nombreInput = await screen.findByTestId('lab-nombre-input')
     fireEvent.change(nombreInput, { target: { value: 'Laboratorio Actualizado' } })
     fireEvent.click(screen.getByTestId('lab-save-button'))
@@ -139,7 +152,11 @@ describe('Lab screen (logo upload N11.3)', () => {
   })
 
   it('uploads a logo as a base64 image data URI (no filesystem path)', async () => {
-    render(<Lab />)
+    render(
+      <ToastProvider>
+        <Lab />
+      </ToastProvider>,
+    )
     await screen.findByTestId('lab-nombre-input')
 
     const file = new File(['pixels'], 'logo.png', { type: 'image/png' })
@@ -154,6 +171,24 @@ describe('Lab screen (logo upload N11.3)', () => {
     expect(arg.logo.startsWith('data:image/png;base64,')).toBe(true)
     expect(arg.logo.includes('/Users/')).toBe(false)
     expect(arg.logo.includes('\\')).toBe(false)
+  })
+
+  it('saves the default report format through config:setReportFormat with a toast', async () => {
+    render(
+      <ToastProvider>
+        <Lab />
+      </ToastProvider>,
+    )
+    const select = (await screen.findByTestId('report-format-select')) as HTMLSelectElement
+    expect(select.value).toBe('generico')
+
+    fireEvent.change(select, { target: { value: 'especializado' } })
+    fireEvent.click(screen.getByTestId('report-format-save'))
+
+    await waitFor(() => {
+      expect(mockApi.config.setReportFormat).toHaveBeenCalledWith({ formato: 'especializado' })
+    })
+    expect(await screen.findByText(/Formato de reporte guardado/i)).toBeInTheDocument()
   })
 })
 

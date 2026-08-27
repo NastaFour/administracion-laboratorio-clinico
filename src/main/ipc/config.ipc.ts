@@ -6,6 +6,7 @@ import {
   type BcvRateEntry,
   type LabConfig,
   type PrintConfig,
+  type ReportFormat,
   type Session,
 } from '@/shared/contracts'
 import { handle } from './register'
@@ -14,10 +15,12 @@ import {
   getBioanalistaConfig,
   getLabConfig,
   getPrintConfig,
+  getReportFormat,
   listBcvHistory,
   setBioanalistaConfig,
   setLabConfig,
   setPrintConfig,
+  setReportFormat,
 } from '../repositories/config'
 
 const ADMIN_ONLY = [ROLES.ADMIN]
@@ -100,6 +103,28 @@ export function handleGetBcvHistory(db: Database.Database): BcvRateEntry[] {
   return listBcvHistory(db)
 }
 
+export function handleGetReportFormat(db: Database.Database): ReportFormat {
+  return getReportFormat(db)
+}
+
+export function handleSetReportFormat(
+  db: Database.Database,
+  req: { formato: ReportFormat },
+  session: Session,
+): ReportFormat {
+  const before = getReportFormat(db)
+  const saved = setReportFormat(db, req.formato)
+  writeAudit(db, {
+    usuario_id: session.userId,
+    accion: 'config.cambiada',
+    entidad: 'config',
+    entidad_id: null,
+    antes: { seccion: 'reporte_formato', formato: before },
+    despues: { seccion: 'reporte_formato', formato: saved },
+  })
+  return saved
+}
+
 export function registerConfigHandlers(db: Database.Database): void {
   handle(db, 'config:getLab', ADMIN_ONLY, configChannels['config:getLab'].request, handleGetLab)
   handle(db, 'config:setLab', ADMIN_ONLY, configChannels['config:setLab'].request, handleSetLab)
@@ -109,4 +134,8 @@ export function registerConfigHandlers(db: Database.Database): void {
   handle(db, 'config:getPrint', ADMIN_ONLY, configChannels['config:getPrint'].request, handleGetPrint)
   handle(db, 'config:setPrint', ADMIN_ONLY, configChannels['config:setPrint'].request, handleSetPrint)
   handle(db, 'config:getBcvHistory', ADMIN_ONLY, configChannels['config:getBcvHistory'].request, handleGetBcvHistory)
+  // Reading the report format is allowed for every role: any staff member can
+  // render/preview a report; only admins may change the default layout.
+  handle(db, 'config:getReportFormat', [], configChannels['config:getReportFormat'].request, handleGetReportFormat)
+  handle(db, 'config:setReportFormat', ADMIN_ONLY, configChannels['config:setReportFormat'].request, handleSetReportFormat)
 }

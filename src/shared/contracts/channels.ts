@@ -126,6 +126,8 @@ export const CHANNEL_ALLOWLIST = Object.freeze([
   'config:setLogo',
   'config:getPrint',
   'config:setPrint',
+  'config:getReportFormat',
+  'config:setReportFormat',
   'config:getBcvHistory',
 
   // backup / import / export

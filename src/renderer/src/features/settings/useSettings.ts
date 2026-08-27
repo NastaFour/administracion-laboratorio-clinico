@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { BioanalistaConfig, LabConfig, User } from '@/shared/contracts'
+import type { BioanalistaConfig, LabConfig, ReportFormat, User } from '@/shared/contracts'
 
 /**
  * Shared error mapping for the settings screens (plain-Spanish messages).
@@ -63,6 +63,51 @@ export function useLabConfig() {
   }, [])
 
   return { config, loading, error, save, setLogo }
+}
+
+/**
+ * Dual-format report selector (SPEC-VISUAL-PDF-TEMPLATES §3.A): the admin
+ * picks the default PDF layout; the value is read by the print/preview/save
+ * pipeline in the main process (WU4) unless overridden per request.
+ */
+export function useReportFormat() {
+  const [formato, setFormato] = useState<ReportFormat>('generico')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    window.api.config
+      .getReportFormat()
+      .then((result) => {
+        if (cancelled) return
+        if (!result.ok) {
+          setError(mapConfigError(result.error.code))
+          return
+        }
+        setFormato(result.data)
+      })
+      .catch(() => {
+        if (!cancelled) setError(mapConfigError('DB_ERROR'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const save = useCallback(async (next: ReportFormat) => {
+    const result = await window.api.config.setReportFormat({ formato: next })
+    if (!result.ok) {
+      return { ok: false as const, error: mapConfigError(result.error.code) }
+    }
+    setFormato(result.data)
+    return { ok: true as const }
+  }, [])
+
+  return { formato, loading, error, save }
 }
 
 export function useBioanalistaConfig() {

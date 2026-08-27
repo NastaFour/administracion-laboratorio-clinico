@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { BioanalistaConfig, BcvRateEntry, LabConfig, PrintConfig } from '@/shared/contracts'
+import type { BioanalistaConfig, BcvRateEntry, LabConfig, PrintConfig, ReportFormat } from '@/shared/contracts'
 import { toIsoString } from './helpers'
 
 export function getConfigValue(db: Database.Database, clave: string): string | null {
@@ -102,6 +102,23 @@ export function setPrintConfig(db: Database.Database, config: PrintConfig): Prin
   setConfigValue(db, PRINT_CONFIG_KEYS.margins, JSON.stringify(config.margins))
   setConfigValue(db, PRINT_CONFIG_KEYS.copies, String(config.copies))
   return getPrintConfig(db)
+}
+
+const REPORT_FORMAT_KEY = 'reporte_formato'
+
+/**
+ * Dual-format PDF system (SPEC-VISUAL-PDF-TEMPLATES §3.A): any value that is
+ * not a known format falls back to 'generico' so a corrupted/legacy config
+ * row never breaks report rendering.
+ */
+export function getReportFormat(db: Database.Database): ReportFormat {
+  const value = getConfigValue(db, REPORT_FORMAT_KEY)
+  return value === 'especializado' ? 'especializado' : 'generico'
+}
+
+export function setReportFormat(db: Database.Database, formato: ReportFormat): ReportFormat {
+  setConfigValue(db, REPORT_FORMAT_KEY, formato)
+  return getReportFormat(db)
 }
 
 export function getBcvRate(db: Database.Database): { tasa: number; actualizado_en: string } | null {

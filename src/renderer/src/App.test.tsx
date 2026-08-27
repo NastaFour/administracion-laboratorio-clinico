@@ -36,7 +36,7 @@ beforeEach(() => {
     reports: { preview: vi.fn(), print: vi.fn(), savePdf: vi.fn() },
     payments: { record: vi.fn(), cancel: vi.fn(), listForOrder: vi.fn(), balance: vi.fn() },
     cierre: { run: vi.fn(), print: vi.fn() },
-    config: { getBcvRate: vi.fn(), setBcvRate: vi.fn(), getLab: vi.fn(), setLab: vi.fn(), setBioanalista: vi.fn(), setLogo: vi.fn(), getPrint: vi.fn(), setPrint: vi.fn() },
+    config: { getBcvRate: vi.fn(), setBcvRate: vi.fn(), getLab: vi.fn(), setLab: vi.fn(), setBioanalista: vi.fn(), setLogo: vi.fn(), getPrint: vi.fn(), setPrint: vi.fn(), getReportFormat: vi.fn().mockResolvedValue({ ok: true, data: 'generico' }), setReportFormat: vi.fn() },
     backup: { create: vi.fn(), list: vi.fn(), restore: vi.fn(), prune: vi.fn() },
     import: { preview: vi.fn(), apply: vi.fn() },
     export: { filtered: vi.fn() },

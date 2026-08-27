@@ -102,6 +102,49 @@ describe('config IPC', () => {
     })
   })
 
+  describe('report format (dual-format PDF system)', () => {
+    it('defaults to generico when no format is persisted', async () => {
+      const fetched = await handlers.get('config:getReportFormat')!({}, undefined)
+      expect(fetched.ok).toBe(true)
+      expect(fetched.data).toBe('generico')
+    })
+
+    it('persists the chosen format and reads it back', async () => {
+      const saved = await handlers.get('config:setReportFormat')!({}, { formato: 'especializado' })
+      expect(saved.ok).toBe(true)
+      expect(saved.data).toBe('especializado')
+
+      const fetched = await handlers.get('config:getReportFormat')!({}, undefined)
+      expect(fetched.data).toBe('especializado')
+
+      const row = testDb.db
+        .prepare("SELECT valor FROM configuracion WHERE clave = 'reporte_formato'")
+        .get() as { valor: string }
+      expect(row.valor).toBe('especializado')
+    })
+
+    it('rejects an unknown format value', async () => {
+      const saved = await handlers.get('config:setReportFormat')!({}, { formato: 'medieval' })
+      expect(saved.ok).toBe(false)
+      if (!saved.ok) expect(saved.error?.code).toBe('VALIDATION_ERROR')
+    })
+
+    it('blocks a non-admin from changing the report format', async () => {
+      session = makeSession('tecnico', 9)
+      const saved = await handlers.get('config:setReportFormat')!({}, { formato: 'especializado' })
+      expect(saved.ok).toBe(false)
+      if (!saved.ok) expect(saved.error?.code).toBe('PERMISSION_DENIED')
+    })
+
+    it('allows a non-admin to read the report format', async () => {
+      await handlers.get('config:setReportFormat')!({}, { formato: 'especializado' })
+      session = makeSession('recepcion', 9)
+      const fetched = await handlers.get('config:getReportFormat')!({}, undefined)
+      expect(fetched.ok).toBe(true)
+      expect(fetched.data).toBe('especializado')
+    })
+  })
+
   describe('logo upload (N11.3 base64 data URI)', () => {
     it('RED: accepts a base64 image data URI and stores it under lab_logo', async () => {
       const saved = await handlers.get('config:setLogo')!({}, { logo: LOGO_DATA_URI })

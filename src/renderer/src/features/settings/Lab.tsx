@@ -1,22 +1,42 @@
 import { useState } from 'react'
 import { ImagePlus, Save } from 'lucide-react'
-import type { LabConfig } from '@/shared/contracts'
+import type { LabConfig, ReportFormat } from '@/shared/contracts'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { useLabConfig } from './useSettings'
+import { Select } from '../../components/ui/Select'
+import { useToast } from '../../components/ui/useToast'
+import { useLabConfig, useReportFormat } from './useSettings'
 
 const EMPTY_LOGO_ERROR = 'No se pudo cargar la imagen.'
 
+const FORMAT_LABELS: Record<ReportFormat, string> = {
+  generico: 'Genérico',
+  especializado: 'Especializado',
+}
+
 export function Lab() {
   const { config, loading, error, save, setLogo } = useLabConfig()
+  const {
+    formato,
+    loading: formatoLoading,
+    save: saveFormato,
+  } = useReportFormat()
+  const toast = useToast()
   const [form, setForm] = useState<LabConfig | null>(null)
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null)
   const [logoError, setLogoError] = useState<string | null>(null)
+  const [formatoDraft, setFormatoDraft] = useState<ReportFormat | null>(null)
 
   // Initialize the editable draft once the server config arrives. This is the
   // documented render-phase state adjustment (no cascading effect).
   if (!loading && !error && config && !form) {
     setForm(config)
+  }
+
+  // Sync the format draft once the persisted value arrives — same documented
+  // render-phase adjustment pattern.
+  if (!formatoLoading && formatoDraft === null) {
+    setFormatoDraft(formato)
   }
 
   if (loading || error || !form) {
@@ -39,6 +59,16 @@ export function Lab() {
         ? { ok: true, message: 'Configuración guardada.' }
         : { ok: false, message: result.error },
     )
+  }
+
+  const handleSaveFormato = async (): Promise<void> => {
+    if (!formatoDraft) return
+    const result = await saveFormato(formatoDraft)
+    if (result.ok) {
+      toast.success(`Formato de reporte guardado: ${FORMAT_LABELS[formatoDraft]}.`)
+    } else {
+      toast.error(result.error)
+    }
   }
 
   const handleLogoFile = (file: File | undefined): void => {
@@ -139,6 +169,27 @@ export function Lab() {
           La imagen se guarda dentro del sistema (no como archivo externo).
         </p>
         {logoError && <p className="text-sm text-danger-600">{logoError}</p>}
+      </div>
+
+      <div className="rounded-lg border border-paper-200 p-4 space-y-3">
+        <p className="text-sm font-medium text-ink-700">Formato de reporte</p>
+        <Select
+          label="Plantilla por defecto para los reportes PDF"
+          value={formatoDraft ?? 'generico'}
+          onChange={(e) => setFormatoDraft(e.target.value as ReportFormat)}
+          data-testid="report-format-select"
+        >
+          <option value="generico">Genérico</option>
+          <option value="especializado">Especializado</option>
+        </Select>
+        <p className="text-xs text-ink-500">
+          El formato especializado usa el diseño enmarcado con antibiograma para
+          microbiología; el genérico usa la tabla clásica de 4 columnas.
+        </p>
+        <Button onClick={() => void handleSaveFormato()} data-testid="report-format-save">
+          <Save size={16} className="mr-2" />
+          Guardar formato
+        </Button>
       </div>
 
       <Button onClick={() => void handleSave()} data-testid="lab-save-button">

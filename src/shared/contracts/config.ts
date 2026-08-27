@@ -48,6 +48,15 @@ export const printConfigSchema = z.object({
 
 export type PrintConfig = z.infer<typeof printConfigSchema>
 
+/**
+ * Report layout selector (dual-format PDF system): 'generico' renders the
+ * classic 4-column results sheet; 'especializado' renders the microbiology
+ * pill-box layout with antibiogram (SPEC-VISUAL-PDF-TEMPLATES §1).
+ */
+export const reportFormatSchema = z.enum(['generico', 'especializado'])
+
+export type ReportFormat = z.infer<typeof reportFormatSchema>
+
 /** One row of BCV-rate history (M13.2): newest-first entries with actor + timestamp. */
 export const bcvRateEntrySchema = z.object({
   tasa: positiveMoneySchema,
@@ -85,6 +94,14 @@ export const configChannels = {
   'config:setPrint': {
     request: printConfigSchema,
     response: envelopeSchema(printConfigSchema),
+  },
+  'config:getReportFormat': {
+    request: z.void(),
+    response: envelopeSchema(reportFormatSchema),
+  },
+  'config:setReportFormat': {
+    request: z.object({ formato: reportFormatSchema }),
+    response: envelopeSchema(reportFormatSchema),
   },
   'config:getBcvHistory': {
     request: z.void(),

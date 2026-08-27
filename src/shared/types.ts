@@ -111,6 +111,8 @@ export interface LabCoreAPI {
     setLogo: (req: RequestOf<IpcChannels['config:setLogo']>) => Promise<ResponseOf<IpcChannels['config:setLogo']>>
     getPrint: () => Promise<ResponseOf<IpcChannels['config:getPrint']>>
     setPrint: (req: RequestOf<IpcChannels['config:setPrint']>) => Promise<ResponseOf<IpcChannels['config:setPrint']>>
+    getReportFormat: () => Promise<ResponseOf<IpcChannels['config:getReportFormat']>>
+    setReportFormat: (req: RequestOf<IpcChannels['config:setReportFormat']>) => Promise<ResponseOf<IpcChannels['config:setReportFormat']>>
   }
   backup: {
     create: (req: RequestOf<IpcChannels['backup:create']>) => Promise<ResponseOf<IpcChannels['backup:create']>>
