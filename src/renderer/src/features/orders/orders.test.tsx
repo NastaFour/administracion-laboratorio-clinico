@@ -308,7 +308,7 @@ describe('OrderList actions and role guards (Fix A1, A16, B1)', () => {
       />,
     )
 
-    expect(screen.getByText('No hay órdenes registradas.')).toBeInTheDocument()
+    expect(screen.getByText('No hay órdenes en este período.')).toBeInTheDocument()
     const historyBtn = screen.getByRole('button', { name: /Ir a Historial/i })
     expect(historyBtn).toBeInTheDocument()
     fireEvent.click(historyBtn)
@@ -416,5 +416,33 @@ describe('OrdersPage workflows and toast feedback (Fix A1, A16)', () => {
 
     expect(screen.queryByLabelText(`Entregar orden ${completedOrder.id}`)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(`Anular orden ${completedOrder.id}`)).not.toBeInTheDocument()
+  })
+
+  it('filters orders by the selected period via PeriodSelector (M4)', async () => {
+    const { getPeriodRange } = await import('../../lib/dates')
+
+    render(
+      <ToastProvider>
+        <OrdersPage />
+      </ToastProvider>,
+    )
+
+    // Default period is today (Día): the initial fetch already carries a range.
+    await waitFor(() => {
+      expect(mockApi.orders.list).toHaveBeenCalled()
+    })
+    const todayRange = getPeriodRange('dia')
+    expect(mockApi.orders.list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ desde: todayRange.desde, hasta: todayRange.hasta }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Semana' }))
+
+    await waitFor(() => {
+      const weekRange = getPeriodRange('semana')
+      expect(mockApi.orders.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ desde: weekRange.desde, hasta: weekRange.hasta }),
+      )
+    })
   })
 })

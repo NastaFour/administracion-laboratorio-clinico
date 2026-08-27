@@ -160,4 +160,23 @@ describe('CapturePage', () => {
       )
     })
   })
+
+  it('filters available orders by the selected period via PeriodSelector (M4)', async () => {
+    const { getPeriodRange } = await import('../../lib/dates')
+
+    render(<CapturePage />)
+
+    await waitFor(() => {
+      expect(mockOrders.list).toHaveBeenCalled()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mes' }))
+
+    await waitFor(() => {
+      const monthRange = getPeriodRange('mes')
+      expect(mockOrders.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ desde: monthRange.desde, hasta: monthRange.hasta }),
+      )
+    })
+  })
 })

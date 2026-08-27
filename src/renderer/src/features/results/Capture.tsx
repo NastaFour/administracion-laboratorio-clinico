@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { PeriodSelector } from '../../components/ui/PeriodSelector'
 import { cn } from '../../lib/cn'
+import { getPeriodRange, type PeriodRange } from '../../lib/dates'
 import { useSessionStore } from '../../stores/useSessionStore'
 import { useOrders } from '../orders/useOrders'
 import { useParamsForCapture, useResultActions } from './useResults'
@@ -29,7 +31,9 @@ const CAN_VALIDATE: Role[] = [ROLES.BIOANALISTA, ROLES.ADMIN]
  * workflow actions guarded by role in main (D8 / M7.3 / M7.4 / M7.5).
  */
 export function CapturePage() {
-  const { orders, loading: ordersLoading } = useOrders()
+  // M4: period navigation — default to today (Día), switchable via PeriodSelector.
+  const [period, setPeriod] = useState<PeriodRange>(() => getPeriodRange('dia'))
+  const { orders, loading: ordersLoading } = useOrders({ desde: period.desde, hasta: period.hasta })
   const [orderSearch, setOrderSearch] = useState('')
   const [patientsMap, setPatientsMap] = useState<Map<number, Patient>>(new Map())
   const [selectedOrder, setSelectedOrder] = useState<OrderWithExams | null>(null)
@@ -85,6 +89,8 @@ export function CapturePage() {
         </h2>
         <p className="text-sm text-ink-500">Capture y valide los resultados por examen.</p>
       </div>
+
+      <PeriodSelector value={period} onChange={(range) => setPeriod(range)} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">

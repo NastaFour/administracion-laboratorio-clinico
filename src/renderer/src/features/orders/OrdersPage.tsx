@@ -6,8 +6,10 @@ import { OrderForm } from './OrderForm'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
+import { PeriodSelector } from '../../components/ui/PeriodSelector'
 import { useToast } from '../../components/ui/useToast'
 import { useSessionStore } from '../../stores/useSessionStore'
+import { getPeriodRange, type PeriodRange } from '../../lib/dates'
 import type { CreateOrderRequest, OrderStatus, OrderWithExams, Patient } from '@/shared/contracts'
 import { ORDER_STATUS } from '@/shared/contracts'
 
@@ -29,9 +31,14 @@ export function OrdersPage({ onNavigateToHistory }: OrdersPageProps = {}) {
     estatus: '',
     pendientePago: '',
   })
+  // M4: uniform period navigation — default to today (Día), switch to
+  // Semana/Mes/Año with the PeriodSelector.
+  const [period, setPeriod] = useState<PeriodRange>(() => getPeriodRange('dia'))
   const { orders, loading, error, refetch, create, update, deliver, voidOrder, authorizeCredit } = useOrders({
     estatus: filters.estatus || undefined,
     pendientePago: filters.pendientePago === '' ? undefined : filters.pendientePago === 'true',
+    desde: period.desde,
+    hasta: period.hasta,
   })
 
   const [patientsMap, setPatientsMap] = useState<Map<number, Patient>>(new Map())
@@ -186,6 +193,8 @@ export function OrdersPage({ onNavigateToHistory }: OrdersPageProps = {}) {
           {error}
         </div>
       )}
+
+      <PeriodSelector value={period} onChange={(range) => setPeriod(range)} />
 
       <div className="flex flex-wrap gap-4 items-end">
         <div className="space-y-1">

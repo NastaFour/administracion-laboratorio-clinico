@@ -43,7 +43,7 @@ export function OrderList({
   if (orders.length === 0) {
     return (
       <div className="rounded-lg border border-paper-200 dark:border-surface-border bg-paper-50 dark:bg-surface-card p-8 text-center space-y-3">
-        <p className="text-ink-500 dark:text-ink-600">No hay órdenes registradas.</p>
+        <p className="text-ink-500 dark:text-ink-600">No hay órdenes en este período.</p>
         {onNavigateToHistory && (
           <Button
             variant="secondary"

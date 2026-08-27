@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-li
 import type { OrderStatus, OrderWithExams } from '@/shared/contracts'
 import { HistoryPage } from './HistoryPage'
 import { buildHistoryCsv, paymentStateLabel, type HistoryRow } from '../../lib/historyCsv'
+import { getPeriodRange } from '../../lib/dates'
 
 const order = (id: number, overrides: Partial<OrderWithExams> = {}): OrderWithExams => ({
   id,
@@ -99,7 +100,11 @@ describe('HistoryPage', () => {
     expect(within(screen.getByTestId('history-row-2')).getByText('Crédito')).toBeInTheDocument()
     expect(within(screen.getByTestId('history-row-3')).getByText('Pendiente')).toBeInTheDocument()
     expect(within(screen.getByTestId('history-row-2')).getByText('García, Luis')).toBeInTheDocument()
-    expect(mockApi.orders.list).toHaveBeenCalledWith({})
+    // M4: the initial fetch already carries the default period range (current month).
+    const monthRange = getPeriodRange('mes')
+    expect(mockApi.orders.list).toHaveBeenCalledWith(
+      expect.objectContaining({ desde: monthRange.desde, hasta: monthRange.hasta }),
+    )
   })
 
   it('filters by payment state and passes pendientePago to the main side (M10.2)', async () => {
@@ -107,8 +112,15 @@ describe('HistoryPage', () => {
     await waitFor(() => expect(screen.getByTestId('history-row-1')).toBeInTheDocument())
 
     fireEvent.change(screen.getByTestId('history-payment'), { target: { value: 'Pendiente' } })
+    const monthRange = getPeriodRange('mes')
     await waitFor(() => {
-      expect(mockApi.orders.list).toHaveBeenLastCalledWith({ pendientePago: true })
+      expect(mockApi.orders.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          pendientePago: true,
+          desde: monthRange.desde,
+          hasta: monthRange.hasta,
+        }),
+      )
     })
   })
 
@@ -117,8 +129,15 @@ describe('HistoryPage', () => {
     await waitFor(() => expect(screen.getByTestId('history-row-1')).toBeInTheDocument())
 
     fireEvent.change(screen.getByTestId('history-status'), { target: { value: 'Pendiente' } })
+    const monthRange = getPeriodRange('mes')
     await waitFor(() => {
-      expect(mockApi.orders.list).toHaveBeenLastCalledWith({ estatus: 'Pendiente' })
+      expect(mockApi.orders.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          estatus: 'Pendiente',
+          desde: monthRange.desde,
+          hasta: monthRange.hasta,
+        }),
+      )
     })
   })
 
@@ -172,6 +191,27 @@ describe('HistoryPage', () => {
 
     fireEvent.click(screen.getByTestId('history-export-csv'))
     await waitFor(() => expect(clickSpy).toHaveBeenCalled())
+  })
+
+  it('syncs the manual date filters with the PeriodSelector (M4)', async () => {
+    render(<HistoryPage />)
+    await waitFor(() => expect(screen.getByTestId('history-row-1')).toBeInTheDocument())
+
+    // Default period is the current month: Desde/Hasta inputs reflect it.
+    const monthRange = getPeriodRange('mes')
+    expect(screen.getByDisplayValue(monthRange.desde)).toBeInTheDocument()
+    expect(screen.getByDisplayValue(monthRange.hasta)).toBeInTheDocument()
+
+    // Switching to Semana updates the inputs AND the fetch.
+    fireEvent.click(screen.getByRole('button', { name: 'Semana' }))
+    const weekRange = getPeriodRange('semana')
+    await waitFor(() => {
+      expect(screen.getByDisplayValue(weekRange.desde)).toBeInTheDocument()
+      expect(screen.getByDisplayValue(weekRange.hasta)).toBeInTheDocument()
+      expect(mockApi.orders.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ desde: weekRange.desde, hasta: weekRange.hasta }),
+      )
+    })
   })
 })
 

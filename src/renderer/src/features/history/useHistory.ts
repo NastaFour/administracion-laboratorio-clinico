@@ -40,8 +40,8 @@ function patientName(patient: Patient | undefined): string {
  * and payment state, with per-order re-print (WU10 pipeline) and re-export
  * (PDF via save dialog / filtered CSV).
  */
-export function useHistory(): HistoryState {
-  const [filters, setFilters] = useState<HistoryFilters>({})
+export function useHistory(initialFilters: HistoryFilters = {}): HistoryState {
+  const [filters, setFilters] = useState<HistoryFilters>(initialFilters)
   const [rows, setRows] = useState<HistoryRow[]>([])
   const [exams, setExams] = useState<Map<number, string>>(new Map())
   const [loading, setLoading] = useState(false)

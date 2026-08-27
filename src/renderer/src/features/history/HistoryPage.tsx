@@ -5,8 +5,10 @@ import { ORDER_STATUS } from '@/shared/contracts'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { PeriodSelector } from '../../components/ui/PeriodSelector'
 import { cn } from '../../lib/cn'
 import { paymentStateLabel } from '../../lib/historyCsv'
+import { getPeriodRange, type PeriodRange } from '../../lib/dates'
 import { useHistory } from './useHistory'
 
 const STATUS_OPTIONS: Array<{ value: OrderStatus | ''; label: string }> = [
@@ -29,7 +31,14 @@ function formatFecha(iso: string): string {
 }
 
 export function HistoryPage() {
-  const { rows, exams, loading, error, filters, setFilters, reprint, reexport, preview, exportCsv } = useHistory()
+  // M4: period navigation — Historial defaults to the current month (archive
+  // view). The PeriodSelector is the source of the base date range; the manual
+  // Desde/Hasta inputs stay in sync and remain editable.
+  const [period, setPeriod] = useState<PeriodRange>(() => getPeriodRange('mes'))
+  const { rows, exams, loading, error, filters, setFilters, reprint, reexport, preview, exportCsv } = useHistory({
+    desde: period.desde,
+    hasta: period.hasta,
+  })
   const [patientQuery, setPatientQuery] = useState('')
   const [patientResults, setPatientResults] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
@@ -93,9 +102,9 @@ export function HistoryPage() {
     }
   }
 
+  // The base period (desde/hasta) is always active; only the extra filters
+  // (patient/status/payment) count as "filters" for the clear button.
   const hasFilters =
-    filters.desde !== undefined ||
-    filters.hasta !== undefined ||
     filters.pacienteId !== undefined ||
     filters.estatus !== undefined ||
     filters.pendientePago !== undefined
@@ -116,6 +125,14 @@ export function HistoryPage() {
           Exportar CSV
         </Button>
       </div>
+
+      <PeriodSelector
+        value={period}
+        onChange={(range) => {
+          setPeriod(range)
+          setFilters({ ...filters, desde: range.desde, hasta: range.hasta })
+        }}
+      />
 
       <div className="flex flex-wrap items-end gap-3 rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-4 transition-colors">
         <Input
@@ -226,7 +243,8 @@ export function HistoryPage() {
           <Button
             variant="secondary"
             onClick={() => {
-              setFilters({})
+              // Clear the extra filters but keep the active period base range.
+              setFilters({ desde: period.desde, hasta: period.hasta })
               setPatientQuery('')
               setSelectedPatient(null)
               setPatientResults([])
