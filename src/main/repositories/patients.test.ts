@@ -5,6 +5,7 @@ import {
   deactivatePatient,
   getPatient,
   getPatientByCedula,
+  getPatientDossier,
   listPatients,
   mergePatientsOverwrite,
   searchPatients,
@@ -212,5 +213,29 @@ describe('Sobrescribir merge overwrite (M13.5)', () => {
 
     expect(getPatientByCedula(testDb.db, 'V-60000007')).toBeNull()
     expect(getPatientByCedula(testDb.db, 'V-60000006')?.nombre).toBe('Original')
+  })
+
+  it('retrieves patient dossier with balance, orders, payments and results', () => {
+    const patient = repoCreatePatient(testDb.db, {
+      cedula: 'V-99999999',
+      nombre: 'Carlos',
+      apellido: 'Dossier',
+      fecha_nacimiento: '1990-01-01',
+      sexo: 'M',
+      telefono: '0414-9999999',
+      email: 'carlos@test.com',
+      direccion: 'Av Principal',
+    })
+
+    const dossier = getPatientDossier(testDb.db, patient.id)
+    expect(dossier).not.toBeNull()
+    expect(dossier?.paciente.nombre).toBe('Carlos')
+    expect(dossier?.paciente.edad).toBeGreaterThanOrEqual(30)
+    expect(dossier?.balance.facturado).toBe(0)
+    expect(dossier?.balance.pagado).toBe(0)
+    expect(dossier?.balance.saldo).toBe(0)
+    expect(dossier?.ordenes).toEqual([])
+    expect(dossier?.pagos).toEqual([])
+    expect(dossier?.resultados).toEqual([])
   })
 })

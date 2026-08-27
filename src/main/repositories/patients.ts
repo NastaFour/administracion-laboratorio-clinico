@@ -346,15 +346,16 @@ export function getPatientDossier(db: Database.Database, pacienteId: number): Pa
   // 5. Results
   const resultRows = db
     .prepare(
-      `SELECT rv.orden_id, ec.nombre AS examen_nombre, pc.nombre AS parametro_nombre,
-              rv.valor, pc.unidad, rv.flag
-       FROM resultados_valores rv
-       JOIN orden_examenes oe ON oe.id = rv.orden_examen_id
+      `SELECT oe.orden_id, ec.nombre AS examen_nombre, pe.nombre AS parametro_nombre,
+              COALESCE(CAST(r.valor_numerico AS TEXT), r.valor_cualitativo, r.valor_texto) AS valor,
+              pe.unidad, r.flag
+       FROM resultados r
+       JOIN orden_examenes oe ON oe.id = r.orden_examen_id
        JOIN examenes_catalogo ec ON ec.id = oe.examen_id
-       JOIN parametros_catalogo pc ON pc.id = rv.parametro_id
-       JOIN ordenes o ON o.id = rv.orden_id
+       JOIN parametros_examen pe ON pe.id = r.parametro_id
+       JOIN ordenes o ON o.id = oe.orden_id
        WHERE o.paciente_id = ?
-       ORDER BY rv.orden_id DESC, ec.nombre, pc.nombre`,
+       ORDER BY oe.orden_id DESC, ec.nombre, pe.orden, pe.nombre`,
     )
     .all(pacienteId) as Array<{
       orden_id: number
