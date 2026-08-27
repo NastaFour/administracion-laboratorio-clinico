@@ -17,6 +17,8 @@ import {
   formatBand,
   formatExactAge,
   formatIsoDate,
+  isBKExam,
+  isMicrobiologyExam,
   printReportToPdf,
   printReportToPrinter,
   REPORT_FONT_HANDSHAKE,
@@ -522,5 +524,160 @@ describe('pdf module — print pipeline (WU10b)', () => {
     const entries = listAuditEntries(testDb.db, { accion: 'reporte.impreso' })
     expect(entries).toHaveLength(1)
     expect(mock.calls.printOptions).toHaveLength(1)
+  })
+})
+
+describe('pdf module — dual-format data (WU2/WU4, SPEC-VISUAL-PDF-TEMPLATES)', () => {
+  let testDb: Awaited<ReturnType<typeof createTestDb>>
+  let bioId: number
+  let pacienteId: number
+  let ordenId: number
+
+  /**
+   * Microbiology fixtures need explicit categoria/nombre — the shared
+   * createExam helper hardcodes categoria='Test'.
+   */
+  function insertExamWithCategoria(
+    db: Database.Database,
+    codigo: string,
+    nombre: string,
+    categoria: string,
+    muestra = 'Sangre',
+  ): number {
+    const result = db
+      .prepare(
+        "INSERT INTO examenes_catalogo (codigo, nombre, categoria, muestra, precio, activo) VALUES (?, ?, ?, ?, 100, 1)",
+      )
+      .run(codigo, nombre, categoria, muestra)
+    return Number(result.lastInsertRowid)
+  }
+
+  beforeEach(async () => {
+    testDb = await createTestDb()
+    bioId = createUser(testDb.db, 'bio1', 'bioanalista')
+    pacienteId = insertPatient(testDb.db, 'V-34000001', 'Eva', 'Montiel', '1985-03-15', 'F')
+    const examId = createExam(testDb.db, 'HEMO', 100)
+    ordenId = helperCreateOrder(testDb.db, pacienteId, [examId])
+    const oe = testDb.db.prepare('SELECT id FROM orden_examenes WHERE orden_id = ?').get(ordenId) as { id: number }
+    const paramId = insertParam(testDb.db, examId, 'Hemoglobina', 'g/dL', 'numerico')
+    insertRange(testDb.db, paramId, 'F', 'anios', 18, 99, 12.0, 16.0)
+    insertResult(testDb.db, oe.id, paramId, 14, RESULT_STATUS.VALIDADO, bioId)
+  })
+
+  afterEach(() => {
+    testDb.cleanup()
+  })
+
+  it('defaults formato to generico when no reporte_formato is configured', () => {
+    const report = buildReportData(testDb.db, ordenId, { refDate: '2026-08-19' })
+    expect(report.formato).toBe('generico')
+    expect(report.isMicrobiology).toBe(false)
+    expect(report.isBK).toBe(false)
+    expect(report.antibiograma).toBeNull()
+  })
+
+  it('honors the configured reporte_formato as the default layout', () => {
+    setConfigValue(testDb.db, 'reporte_formato', 'especializado')
+
+    const report = buildReportData(testDb.db, ordenId, { refDate: '2026-08-19' })
+    expect(report.formato).toBe('especializado')
+  })
+
+  it('an explicit formato option overrides the configured default', () => {
+    setConfigValue(testDb.db, 'reporte_formato', 'especializado')
+
+    const report = buildReportData(testDb.db, ordenId, { refDate: '2026-08-19', formato: 'generico' })
+    expect(report.formato).toBe('generico')
+  })
+
+  it('flags isMicrobiology for a Bacteriología-category exam (accent-insensitive)', () => {
+    const uroExam = insertExamWithCategoria(testDb.db, 'URO', 'UROCULTIVO', 'Bacteriología', 'Orina')
+    const oe = testDb.db
+      .prepare('INSERT INTO orden_examenes (orden_id, examen_id, precio, tercerizado) VALUES (?, ?, 100, 0)')
+      .run(ordenId, uroExam)
+    const paramId = insertParam(testDb.db, uroExam, 'Género', null, 'cualitativo')
+    insertResult(testDb.db, Number(oe.lastInsertRowid), paramId, 'Escherichia coli', RESULT_STATUS.VALIDADO, bioId)
+
+    const report = buildReportData(testDb.db, ordenId, { refDate: '2026-08-19' })
+
+    expect(report.isMicrobiology).toBe(true)
+    expect(report.isBK).toBe(false)
+  })
+
+  it('flags isMicrobiology by exam NAME even without a microbiology category', () => {
+    const gargantaExam = insertExamWithCategoria(testDb.db, 'GAR', 'CULTIVO DE GARGANTA', 'Test', 'Exudado faríngeo')
+    const oe = testDb.db
+      .prepare('INSERT INTO orden_examenes (orden_id, examen_id, precio, tercerizado) VALUES (?, ?, 100, 0)')
+      .run(ordenId, gargantaExam)
+    const paramId = insertParam(testDb.db, gargantaExam, 'Género', null, 'cualitativo')
+    insertResult(testDb.db, Number(oe.lastInsertRowid), paramId, 'Streptococcus', RESULT_STATUS.VALIDADO, bioId)
+
+    const report = buildReportData(testDb.db, ordenId, { refDate: '2026-08-19' })
+
+    expect(report.isMicrobiology).toBe(true)
+  })
+
+  it('flags isBK for a Baciloscopia exam (Zielh-Neelsen variant)', () => {
+    const bkExam = insertExamWithCategoria(testDb.db, 'BKE', 'BK DE ESPUTO', 'Bacteriología', 'Esputo')
+    const oe = testDb.db
+      .prepare('INSERT INTO orden_examenes (orden_id, examen_id, precio, tercerizado) VALUES (?, ?, 100, 0)')
+      .run(ordenId, bkExam)
+    const paramId = insertParam(testDb.db, bkExam, 'Bacilos Acido Resistentes', null, 'cualitativo')
+    insertResult(testDb.db, Number(oe.lastInsertRowid), paramId, 'POSITIVO 2+', RESULT_STATUS.VALIDADO, bioId)
+
+    const report = buildReportData(testDb.db, ordenId, { refDate: '2026-08-19' })
+
+    expect(report.isMicrobiology).toBe(true)
+    expect(report.isBK).toBe(true)
+  })
+
+  it('carries the validated per-result comentario into the report data', () => {
+    const oe = testDb.db.prepare('SELECT id FROM orden_examenes WHERE orden_id = ?').get(ordenId) as { id: number }
+    const resultId = testDb.db
+      .prepare('SELECT id FROM resultados WHERE orden_examen_id = ?')
+      .get(oe.id) as { id: number }
+    testDb.db.prepare('UPDATE resultados SET comentario = ? WHERE id = ?').run('Hemólisis leve', resultId.id)
+
+    const report = buildReportData(testDb.db, ordenId, { refDate: '2026-08-19' })
+
+    expect(report.examenes[0].resultados[0].comentario).toBe('Hemólisis leve')
+  })
+
+  it('isMicrobiologyExam: categories match accent-insensitively and names via /UROCULTIVO|CULTIVO|COPROCULTIVO|BK\\b/i', () => {
+    expect(isMicrobiologyExam({ categoria: 'Bacteriología', nombre: 'Examen X' })).toBe(true)
+    expect(isMicrobiologyExam({ categoria: 'bacteriologia', nombre: 'Examen X' })).toBe(true)
+    expect(isMicrobiologyExam({ categoria: 'Urocultivo', nombre: 'Examen X' })).toBe(true)
+    expect(isMicrobiologyExam({ categoria: 'Test', nombre: 'UROCULTIVO DE ORINA' })).toBe(true)
+    expect(isMicrobiologyExam({ categoria: 'Test', nombre: 'COPROCULTIVO' })).toBe(true)
+    expect(isMicrobiologyExam({ categoria: 'Test', nombre: 'CULTIVO DE GARGANTA' })).toBe(true)
+    expect(isMicrobiologyExam({ categoria: 'Test', nombre: 'BK DE ESPUTO' })).toBe(true)
+    expect(isMicrobiologyExam({ categoria: 'Hematología', nombre: 'HEMOGRAMA' })).toBe(false)
+  })
+
+  it('isBKExam: /BK|BACILO/i on the exam name only', () => {
+    expect(isBKExam('BK DE ESPUTO')).toBe(true)
+    expect(isBKExam('BACILOSCOPIA DE LCR')).toBe(true)
+    expect(isBKExam('UROCULTIVO')).toBe(false)
+    expect(isBKExam('HEMOGRAMA')).toBe(false)
+  })
+
+  it('the print pipeline encodes the chosen formato into the payload (WU4)', async () => {
+    setConfigValue(testDb.db, 'reporte_formato', 'especializado')
+    const mock = makeMockWindow()
+    const payloads: string[] = []
+    const deps: PdfDeps = {
+      createOffscreenWindow: vi.fn(async (_templatePath: string, payload: string) => {
+        payloads.push(payload)
+        return mock.win
+      }),
+    }
+
+    await printReportToPdf(testDb.db, ordenId, makeSession(ROLES.BIOANALISTA, bioId), deps)
+    const defaultPayload = JSON.parse(Buffer.from(payloads[0], 'base64url').toString('utf8'))
+    expect(defaultPayload.formato).toBe('especializado')
+
+    await printReportToPdf(testDb.db, ordenId, makeSession(ROLES.BIOANALISTA, bioId), deps, { formato: 'generico' })
+    const overridePayload = JSON.parse(Buffer.from(payloads[1], 'base64url').toString('utf8'))
+    expect(overridePayload.formato).toBe('generico')
   })
 })
