@@ -44,12 +44,20 @@ export function StatsView() {
   const [desde, setDesde] = useState(initial.desde)
   const [hasta, setHasta] = useState(initial.hasta)
   const [range, setRange] = useState(initial)
+  const [rangeError, setRangeError] = useState<string | null>(null)
   const { data, loading, error } = useStats(range.desde, range.hasta)
 
   const applyRange = () => {
-    if (desde && hasta && desde <= hasta) {
-      setRange({ desde, hasta })
+    if (!desde || !hasta) {
+      setRangeError('Seleccione ambas fechas para consultar.')
+      return
     }
+    if (desde > hasta) {
+      setRangeError('La fecha "Desde" no puede ser posterior a "Hasta".')
+      return
+    }
+    setRangeError(null)
+    setRange({ desde, hasta })
   }
 
   const chartData = (data?.ingreso_mensual ?? []).map((row) => ({
@@ -64,21 +72,42 @@ export function StatsView() {
 
   return (
     <div className="space-y-4" data-testid="stats-view">
-      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-paper-200 bg-white p-4">
-        <Input label="Desde" type="date" value={desde} onChange={(event) => setDesde(event.target.value)} />
-        <Input label="Hasta" type="date" value={hasta} onChange={(event) => setHasta(event.target.value)} />
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-4 transition-colors">
+        <Input
+          label="Desde"
+          type="date"
+          value={desde}
+          onChange={(event) => {
+            setDesde(event.target.value)
+            if (rangeError) setRangeError(null)
+          }}
+        />
+        <Input
+          label="Hasta"
+          type="date"
+          value={hasta}
+          onChange={(event) => {
+            setHasta(event.target.value)
+            if (rangeError) setRangeError(null)
+          }}
+        />
         <Button type="button" onClick={applyRange} data-testid="stats-apply">
           Aplicar rango
         </Button>
         {data && data.ingreso_mensual.length > 0 && (
-          <p className="ml-auto text-sm text-ink-600">
+          <p className="ml-auto text-sm text-ink-600 dark:text-ink-700">
             Mes anterior:{' '}
-            <span className="font-semibold tabular-nums text-ink-900">
+            <span className="font-semibold tabular-nums text-ink-900 dark:text-ink-950">
               {formatBs(data.ingreso_mes_anterior_bs)}
             </span>{' '}
-            <span className="text-ink-500 tabular-nums">
+            <span className="text-ink-500 dark:text-ink-600 tabular-nums">
               ({formatUsd(data.ingreso_mes_anterior_usd)})
             </span>
+          </p>
+        )}
+        {rangeError && (
+          <p className="w-full text-xs text-danger-600 dark:text-danger-400 mt-1" role="alert">
+            {rangeError}
           </p>
         )}
       </div>

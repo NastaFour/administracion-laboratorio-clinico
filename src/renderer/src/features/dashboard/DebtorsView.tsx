@@ -44,30 +44,30 @@ export function DebtorsView() {
         const bucket = data.filter((debtor) => debtor.rango === rango)
         const total = bucket.reduce((sum, debtor) => sum + debtor.saldo_bs, 0)
         return (
-          <div key={rango} className="rounded-lg border border-paper-200 bg-white">
-            <div className="flex items-center justify-between border-b border-paper-100 px-4 py-2.5">
-              <h3 className="text-sm font-semibold text-ink-900" data-testid={`bucket-${rango}`}>
+          <div key={rango} className="rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card transition-colors">
+            <div className="flex items-center justify-between border-b border-paper-100 dark:border-surface-border px-4 py-2.5">
+              <h3 className="text-sm font-semibold text-ink-900 dark:text-ink-950" data-testid={`bucket-${rango}`}>
                 {BUCKET_LABELS[rango]}
               </h3>
-              <p className="text-sm font-semibold text-danger-700 tabular-nums">{formatBs(total)}</p>
+              <p className="text-sm font-semibold text-danger-700 dark:text-danger-400 tabular-nums">{formatBs(total)}</p>
             </div>
             {bucket.length === 0 ? (
-              <p className="px-4 py-3 text-xs text-ink-400">Sin deudores en este rango.</p>
+              <p className="px-4 py-3 text-xs text-ink-400 dark:text-ink-600">Sin deudores en este rango.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-ink-500">
+                  <tr className="text-left text-xs uppercase tracking-wide text-ink-500 dark:text-ink-600 border-b border-paper-100 dark:border-surface-border">
                     <th className="px-4 py-2">Paciente</th>
                     <th className="px-4 py-2 text-right">Días pendientes</th>
                     <th className="px-4 py-2 text-right">Saldo</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-paper-100 dark:divide-surface-border">
                   {bucket.map((debtor, index) => (
-                    <tr key={`${debtor.paciente_id}-${index}`} className="border-t border-paper-100">
-                      <td className="px-4 py-2 font-medium text-ink-900">{debtor.paciente_nombre}</td>
-                      <td className="px-4 py-2 text-right tabular-nums text-ink-600">{debtor.dias_pendientes}</td>
-                      <td className="px-4 py-2 text-right font-medium tabular-nums text-danger-700">
+                    <tr key={`${debtor.paciente_id}-${index}`} className="hover:bg-paper-50 dark:hover:bg-surface-hover transition-colors">
+                      <td className="px-4 py-2 font-medium text-ink-900 dark:text-ink-950">{debtor.paciente_nombre}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-ink-600 dark:text-ink-700">{debtor.dias_pendientes}</td>
+                      <td className="px-4 py-2 text-right font-medium tabular-nums text-danger-700 dark:text-danger-400">
                         {formatBs(debtor.saldo_bs)}
                       </td>
                     </tr>

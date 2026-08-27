@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, TestTube } from 'lucide-react'
 import { useOrders } from '../orders/useOrders'
 import { useSamples } from './useSamples'
@@ -9,14 +9,37 @@ import { Reject } from './Reject'
 import { Label } from './Label'
 import { Button } from '../../components/ui/Button'
 import { cn } from '../../lib/cn'
-import type { OrderWithExams, Sample, SampleStatus } from '@/shared/contracts'
+import type { OrderWithExams, Sample, SampleStatus, Patient } from '@/shared/contracts'
 
 export function SamplingPage() {
   const { orders, loading: ordersLoading } = useOrders({ estatus: 'Pendiente' })
   const [selectedOrder, setSelectedOrder] = useState<OrderWithExams | null>(null)
+  const [patientsMap, setPatientsMap] = useState<Map<number, Patient>>(new Map())
+
+  useEffect(() => {
+    if (!window.api?.patients?.list) return
+    const loadPatients = async () => {
+      try {
+        const result = await window.api.patients.list({ activos: false })
+        if (result.ok && result.data) {
+          const map = new Map<number, Patient>()
+          for (const p of result.data) {
+            map.set(p.id, p)
+          }
+          setPatientsMap(map)
+        }
+      } catch {
+        // non-blocking
+      }
+    }
+    void loadPatients()
+  }, [])
+
   const { samples, loading: samplesLoading, error, register, updateStatus, reject, label } = useSamples(
     selectedOrder?.id ?? null,
   )
+
+  const canRegister = samples.length === 0 || samples.every((s) => s.estatus === 'Rechazada')
 
   const [registerOpen, setRegisterOpen] = useState(false)
   const [statusSample, setStatusSample] = useState<Sample | null>(null)
@@ -81,26 +104,33 @@ export function SamplingPage() {
             </h3>
             {ordersLoading && <p className="text-ink-500 text-sm">Cargando órdenes…</p>}
             <div className="space-y-2 max-h-[60vh] overflow-auto">
-              {orders.map((order) => (
-                <button
-                  key={order.id}
-                  onClick={() => {
-                    setSelectedOrder(order)
-                    setRegisterOpen(false)
-                  }}
-                  className={cn(
-                    'w-full text-left rounded-md border px-3 py-2 transition-colors',
-                    selectedOrder?.id === order.id
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-paper-200 hover:bg-paper-50',
-                  )}
-                >
-                  <p className="text-sm font-medium text-ink-900">Orden #{order.id}</p>
-                  <p className="text-xs text-ink-500">{order.examenes.length} exámenes</p>
-                </button>
-              ))}
+              {orders.map((order) => {
+                const patient = patientsMap.get(order.paciente_id)
+                return (
+                  <button
+                    key={order.id}
+                    onClick={() => {
+                      setSelectedOrder(order)
+                      setRegisterOpen(false)
+                    }}
+                    className={cn(
+                      'w-full text-left rounded-md border px-3 py-2 transition-colors',
+                      selectedOrder?.id === order.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-100/30'
+                        : 'border-paper-200 dark:border-surface-border hover:bg-paper-50 dark:hover:bg-surface-hover',
+                    )}
+                  >
+                    <p className="text-sm font-medium text-ink-900 dark:text-ink-950">
+                      {patient ? `${patient.nombre} ${patient.apellido}` : `Orden #${order.id}`}
+                    </p>
+                    <p className="text-xs text-ink-500 dark:text-ink-600">
+                      Orden #{order.id} · {patient?.cedula ? `${patient.cedula} · ` : ''}{order.examenes.length} exámenes
+                    </p>
+                  </button>
+                )
+              })}
               {!ordersLoading && orders.length === 0 && (
-                <p className="text-sm text-ink-500">No hay órdenes pendientes.</p>
+                <p className="text-sm text-ink-500 dark:text-ink-600">No hay órdenes pendientes.</p>
               )}
             </div>
           </div>
@@ -109,18 +139,27 @@ export function SamplingPage() {
         <div className="lg:col-span-2 space-y-4">
           {selectedOrder ? (
             <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium text-ink-900">Orden #{selectedOrder.id}</h3>
-                  <p className="text-sm text-ink-500">{selectedOrder.examenes.length} exámenes solicitados</p>
-                </div>
-                {samples.length === 0 && (
-                  <Button onClick={() => setRegisterOpen(true)}>
-                    <TestTube size={18} className="mr-2" />
-                    Registrar muestras
-                  </Button>
-                )}
-              </div>
+              {(() => {
+                const selectedPatient = patientsMap.get(selectedOrder.paciente_id)
+                return (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-ink-900 dark:text-ink-950">
+                        Orden #{selectedOrder.id}{selectedPatient ? ` — ${selectedPatient.nombre} ${selectedPatient.apellido}` : ''}
+                      </h3>
+                      <p className="text-sm text-ink-500 dark:text-ink-600">
+                        {selectedPatient?.cedula ? `Cédula: ${selectedPatient.cedula} · ` : ''}{selectedOrder.examenes.length} exámenes solicitados
+                      </p>
+                    </div>
+                    {canRegister && (
+                      <Button onClick={() => setRegisterOpen(true)}>
+                        <TestTube size={18} className="mr-2" />
+                        {samples.length > 0 ? 'Re-registrar muestras' : 'Registrar muestras'}
+                      </Button>
+                    )}
+                  </div>
+                )
+              })()}
 
               {error && (
                 <div className="rounded-md bg-danger-50 text-danger-700 px-4 py-3 text-sm" role="alert">
@@ -138,6 +177,7 @@ export function SamplingPage() {
               />
 
               <Register
+                key={String(registerOpen)}
                 open={registerOpen}
                 ordenId={selectedOrder.id}
                 onClose={() => setRegisterOpen(false)}
@@ -145,6 +185,7 @@ export function SamplingPage() {
               />
 
               <Status
+                key={statusSample ? `${statusSample.id}-${statusSample.estatus}` : 'closed'}
                 open={!!statusSample}
                 sample={statusSample}
                 onClose={() => setStatusSample(null)}

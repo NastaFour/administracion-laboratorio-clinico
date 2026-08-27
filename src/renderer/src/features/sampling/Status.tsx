@@ -16,7 +16,9 @@ interface StatusProps {
 }
 
 export function Status({ open, sample, onClose, onUpdate }: StatusProps) {
-  const [estatus, setEstatus] = useState<SampleStatus>(SAMPLE_STATUS.RECOLECTADA)
+  const [estatus, setEstatus] = useState<SampleStatus>(() =>
+    sample && MANUAL_STATUSES.includes(sample.estatus) ? sample.estatus : SAMPLE_STATUS.RECOLECTADA,
+  )
   const [recoleccionEn, setRecoleccionEn] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

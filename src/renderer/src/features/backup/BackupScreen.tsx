@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Download, FolderArchive, HardDriveDownload, Upload, RefreshCw, Save } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { ConfirmDialog } from '../../components/ui/Modal'
 import type { ImportConflict } from '@/shared/contracts'
 import { useBackups, useExportFlow, useImportFlow, type ConflictResolution, type ResolutionMap } from './useBackup'
 
@@ -50,6 +51,7 @@ export function BackupScreen() {
   const [hasta, setHasta] = useState(todayIso())
   const [formato, setFormato] = useState<'csv' | 'json'>('csv')
   const [passphrase, setPassphrase] = useState('')
+  const [confirmRestorePath, setConfirmRestorePath] = useState<string | null>(null)
 
   const handleCreate = async (): Promise<void> => {
     const res = await createBackup(backupPath)
@@ -148,16 +150,16 @@ export function BackupScreen() {
           <p className="text-sm text-ink-500">No hay respaldos registrados.</p>
         )}
         {!loading && !error && backups.length > 0 && (
-          <ul className="divide-y divide-paper-200 rounded-lg border border-paper-200" data-testid="backup-list">
-            {backups.map((backup) => (
-              <li key={backup.path} className="flex items-center justify-between px-4 py-3 text-sm">
+          <ul className="divide-y divide-paper-200 dark:divide-surface-border rounded-lg border border-paper-200 dark:border-surface-border" data-testid="backup-list">
+            {backups.map((backup, idx) => (
+              <li key={`${backup.path}-${backup.creado_en}-${idx}`} className="flex items-center justify-between px-4 py-3 text-sm">
                 <div className="min-w-0">
-                  <p className="truncate text-ink-800">{backup.path}</p>
-                  <p className="text-xs text-ink-500">
+                  <p className="truncate text-ink-800 dark:text-ink-950 font-medium">{backup.path}</p>
+                  <p className="text-xs text-ink-500 dark:text-ink-600">
                     {new Date(backup.creado_en).toLocaleString('es-VE')} · {backup.size_bytes} bytes
                   </p>
                 </div>
-                <Button variant="secondary" size="sm" onClick={() => void handleRestore(backup.path)}>
+                <Button variant="secondary" size="sm" onClick={() => setConfirmRestorePath(backup.path)}>
                   Restaurar
                 </Button>
               </li>
@@ -301,6 +303,21 @@ export function BackupScreen() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={confirmRestorePath !== null}
+        title="Confirmar restauración de respaldo"
+        message={`¿Está seguro de restaurar el respaldo desde "${confirmRestorePath}"? Esta acción reemplazará la base de datos actual y reiniciará la aplicación.`}
+        confirmLabel="Restaurar y reiniciar"
+        onConfirm={async () => {
+          if (confirmRestorePath) {
+            const p = confirmRestorePath
+            setConfirmRestorePath(null)
+            await handleRestore(p)
+          }
+        }}
+        onCancel={() => setConfirmRestorePath(null)}
+      />
     </div>
   )
 }

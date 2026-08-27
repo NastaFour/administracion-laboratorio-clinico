@@ -326,18 +326,20 @@ export function HistoryPage() {
                         size="sm"
                         onClick={() => void handleReprint(orden.id)}
                         data-testid={`history-reprint-${orden.id}`}
+                        title="Reimprimir resultados de la orden"
                       >
                         <Printer size={14} className="mr-1" />
-                        Re-imprimir
+                        Reimprimir
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => void handleReexport(orden.id)}
                         data-testid={`history-reexport-${orden.id}`}
+                        title="Descargar reporte médico en PDF"
                       >
                         <FileDown size={14} className="mr-1" />
-                        Re-exportar
+                        Descargar PDF
                       </Button>
                     </div>
                   </td>

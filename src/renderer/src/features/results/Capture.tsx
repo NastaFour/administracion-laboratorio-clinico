@@ -17,6 +17,7 @@ import {
   type ParamForCapture,
   type ReferenceRange,
   type Role,
+  type Patient,
 } from '@/shared/contracts'
 
 const CAN_VALIDATE: Role[] = [ROLES.BIOANALISTA, ROLES.ADMIN]
@@ -29,6 +30,8 @@ const CAN_VALIDATE: Role[] = [ROLES.BIOANALISTA, ROLES.ADMIN]
  */
 export function CapturePage() {
   const { orders, loading: ordersLoading } = useOrders()
+  const [orderSearch, setOrderSearch] = useState('')
+  const [patientsMap, setPatientsMap] = useState<Map<number, Patient>>(new Map())
   const [selectedOrder, setSelectedOrder] = useState<OrderWithExams | null>(null)
   const [selectedExamId, setSelectedExamId] = useState<number | null>(null)
   const { params, loading, error: loadError, refetch } = useParamsForCapture(selectedExamId)
@@ -40,7 +43,31 @@ export function CapturePage() {
       if (!result.ok) return
       setExamNames(new Map(result.data.map((exam) => [exam.id, exam.nombre])))
     })
+
+    if (window.api?.patients?.list) {
+      void window.api.patients.list({ activos: false }).then((res) => {
+        if (res.ok && res.data) {
+          const map = new Map<number, Patient>()
+          for (const p of res.data) map.set(p.id, p)
+          setPatientsMap(map)
+        }
+      })
+    }
   }, [])
+
+  const filteredOrders = useMemo(() => {
+    const q = orderSearch.trim().toLowerCase()
+    if (!q) return orders
+    return orders.filter((order) => {
+      const patient = patientsMap.get(order.paciente_id)
+      const pName = patient ? `${patient.nombre} ${patient.apellido} ${patient.cedula}`.toLowerCase() : ''
+      return (
+        order.id.toString().includes(q) ||
+        order.estatus.toLowerCase().includes(q) ||
+        pName.includes(q)
+      )
+    })
+  }, [orders, orderSearch, patientsMap])
 
   const examOptions = useMemo(() => selectedOrder?.examenes ?? [], [selectedOrder])
 
@@ -62,32 +89,49 @@ export function CapturePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
           <div className="rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-4 transition-colors">
-            <h3 className="text-sm font-semibold text-ink-900 dark:text-ink-950 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-ink-900 dark:text-ink-950 mb-2 flex items-center gap-2">
               <Search size={16} />
               Órdenes
             </h3>
+            <div className="mb-3">
+              <Input
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                placeholder="Buscar por orden, paciente o cédula…"
+                inputClassName="text-xs"
+              />
+            </div>
             {ordersLoading && <p className="text-ink-500 dark:text-ink-600 text-sm">Cargando órdenes…</p>}
             <div className="space-y-2 max-h-[60vh] overflow-auto">
-              {orders.map((order) => (
-                <button
-                  key={order.id}
-                  onClick={() => selectOrder(order)}
-                  className={cn(
-                    'w-full text-left rounded-md border px-3 py-2 transition-all active:scale-[0.99]',
-                    selectedOrder?.id === order.id
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-100/30 text-primary-900 dark:text-primary-300 shadow-2xs'
-                      : 'border-paper-200 dark:border-surface-border hover:bg-paper-50 dark:hover:bg-surface-hover',
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-ink-900 dark:text-ink-950">Orden #{order.id}</p>
-                    <span className="text-xs text-ink-500 dark:text-ink-600 capitalize">{order.estatus}</span>
-                  </div>
-                  <p className="text-xs text-ink-500 dark:text-ink-600">{order.examenes.length} exámenes</p>
-                </button>
-              ))}
-              {!ordersLoading && orders.length === 0 && (
-                <p className="text-sm text-ink-500">No hay órdenes registradas.</p>
+              {filteredOrders.map((order) => {
+                const patient = patientsMap.get(order.paciente_id)
+                return (
+                  <button
+                    key={order.id}
+                    onClick={() => selectOrder(order)}
+                    className={cn(
+                      'w-full text-left rounded-md border px-3 py-2 transition-all active:scale-[0.99]',
+                      selectedOrder?.id === order.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-100/30 text-primary-900 dark:text-primary-300 shadow-2xs'
+                        : 'border-paper-200 dark:border-surface-border hover:bg-paper-50 dark:hover:bg-surface-hover',
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-ink-900 dark:text-ink-950">
+                        {patient ? `${patient.nombre} ${patient.apellido}` : `Orden #${order.id}`}
+                      </p>
+                      <span className="text-xs text-ink-500 dark:text-ink-600 capitalize">{order.estatus}</span>
+                    </div>
+                    <p className="text-xs text-ink-500 dark:text-ink-600">
+                      Orden #{order.id} · {patient?.cedula ? `${patient.cedula} · ` : ''}{order.examenes.length} exámenes
+                    </p>
+                  </button>
+                )
+              })}
+              {!ordersLoading && filteredOrders.length === 0 && (
+                <p className="text-sm text-ink-500 dark:text-ink-600">
+                  {orders.length === 0 ? 'No hay órdenes registradas.' : 'No hay órdenes que coincidan.'}
+                </p>
               )}
             </div>
           </div>

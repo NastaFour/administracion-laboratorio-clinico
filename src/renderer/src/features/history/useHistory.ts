@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { OrderFilters, Patient } from '@/shared/contracts'
 import { buildHistoryCsv, type HistoryRow } from '../../lib/historyCsv'
+import { todayLocalDateIso } from '../../lib/dates'
 
 export type HistoryFilters = OrderFilters
 
@@ -141,7 +142,7 @@ export function useHistory(): HistoryState {
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `historial-${new Date().toISOString().slice(0, 10)}.csv`
+    anchor.download = `historial-${todayLocalDateIso()}.csv`
     anchor.click()
     URL.revokeObjectURL(url)
   }, [rows, exams])
