@@ -6,14 +6,15 @@
   <title>Reporte de resultados</title>
   <link rel="stylesheet" href="report.css" />
 </head>
-<body>
+<body data-formato="generico">
   <div id="preview-toolbar" class="barra-acciones-preview no-print">
     <button type="button" onclick="window.print()" class="btn-imprimir">Imprimir reporte</button>
   </div>
 
   <div id="marca-copia" class="marca-copia" hidden aria-hidden="true">COPIA</div>
 
-  <header class="encabezado">
+  <!-- ===================== GENÉRICO: encabezado ===================== -->
+  <header id="encabezado-generico" class="encabezado solo-generico">
     <img id="logo" class="logo" alt="Logo del laboratorio" hidden />
     <div class="lab-info">
       <h1 id="lab-nombre" class="lab-nombre"></h1>
@@ -24,15 +25,26 @@
     </div>
   </header>
 
-  <h2 class="titulo-reporte">Reporte de resultados</h2>
+  <!-- ===================== ESPECIALIZADO: encabezado ===================== -->
+  <header id="encabezado-especializado" class="encabezado-esp solo-especializado" hidden>
+    <img id="logo-esp" class="logo-esp" alt="Logo del laboratorio" hidden />
+    <div class="caja-institucional">
+      <p id="lab-nombre-esp" class="lab-nombre-esp"></p>
+      <p id="lab-sedes-esp" class="lab-sedes-esp" hidden></p>
+      <p id="lab-contacto-esp" class="lab-dato-esp" hidden></p>
+    </div>
+  </header>
 
-  <section class="bloque orden" aria-label="Datos de la orden">
+  <h2 id="titulo-reporte" class="titulo-reporte solo-generico">Reporte de resultados</h2>
+
+  <!-- ===================== GENÉRICO: bloques de datos ===================== -->
+  <section class="bloque orden solo-generico" aria-label="Datos de la orden">
     <p><strong>Nº de orden:</strong> <span id="orden-id"></span></p>
     <p><strong>Fecha:</strong> <span id="orden-fecha"></span></p>
     <p id="orden-observaciones" hidden><strong>Observaciones:</strong> <span id="orden-observaciones-texto"></span></p>
   </section>
 
-  <section class="bloque paciente" aria-label="Datos del paciente">
+  <section class="bloque paciente solo-generico" aria-label="Datos del paciente">
     <p><strong>Paciente:</strong> <span id="paciente-nombre"></span></p>
     <p><strong>Cédula:</strong> <span id="paciente-cedula"></span></p>
     <p><strong>Sexo:</strong> <span id="paciente-sexo"></span></p>
@@ -40,18 +52,53 @@
     <p><strong>F. de nacimiento:</strong> <span id="paciente-fecha-nacimiento"></span></p>
   </section>
 
-  <section id="medico" class="bloque medico" aria-label="Médico referente" hidden>
+  <section id="medico" class="bloque medico solo-generico" aria-label="Médico referente" hidden>
     <p><strong>Médico referente:</strong> <span id="medico-nombre"></span></p>
     <p id="medico-especialidad" hidden><strong>Especialidad:</strong> <span id="medico-especialidad-texto"></span></p>
   </section>
 
-  <main id="examenes"></main>
+  <!-- ===================== ESPECIALIZADO: caja de paciente ===================== -->
+  <section id="paciente-caja" class="report-box paciente-caja solo-especializado" aria-label="Datos del paciente" hidden>
+    <span class="paciente-caja-item"><strong>NOMBRE:</strong> <span id="pac-esp-nombre"></span></span>
+    <span class="paciente-caja-item"><strong>C.I:</strong> <span id="pac-esp-cedula"></span></span>
+    <span class="paciente-caja-item"><strong>SEXO:</strong> <span id="pac-esp-sexo"></span></span>
+    <span class="paciente-caja-item"><strong>EDAD:</strong> <span id="pac-esp-edad"></span></span>
+    <span class="paciente-caja-item"><strong>FECHA:</strong> <span id="pac-esp-fecha"></span></span>
+  </section>
 
+  <!-- ===================== ESPECIALIZADO: identificación del estudio ===================== -->
+  <section id="informe-caja" class="report-box informe-caja solo-especializado" aria-label="Identificación del estudio" hidden>
+    <p class="report-box-title informe-barra">INFORME BACTERIOLOGICO</p>
+    <div class="informe-fila">
+      <span class="informe-item"><strong>TIPO DE INFORME:</strong> DEFINITIVO</span>
+      <span id="informe-cultivo" class="informe-item" hidden><strong>CULTIVO:</strong> <span id="informe-cultivo-valor"></span></span>
+      <span id="informe-examen" class="informe-item" hidden><strong>EXAMEN:</strong> <span id="informe-examen-valor"></span></span>
+      <span id="informe-muestra" class="informe-item" hidden><strong>MUESTRA:</strong> <span id="informe-muestra-valor"></span></span>
+    </div>
+  </section>
+
+  <main id="examenes"></main>
+  <main id="examenes-esp" class="solo-especializado" aria-label="Resultados"></main>
+
+  <!-- ===================== ESPECIALIZADO: observaciones microscópicas ===================== -->
+  <section id="observaciones-caja" class="report-box solo-especializado" aria-label="Observaciones" hidden>
+    <p class="report-box-title">OBSERVACIONES</p>
+    <p id="observaciones-esp-texto" class="observaciones-texto"></p>
+  </section>
+
+  <!-- ===================== ESPECIALIZADO: antibiograma (solo datos estructurados) ===================== -->
+  <section id="antibiograma-caja" class="report-box solo-especializado" aria-label="Antibiograma" hidden>
+    <p class="report-box-title">ANTIBIOGRAMA</p>
+    <div id="antibiograma-container" class="antibiograma-container"></div>
+    <p class="antibiograma-legend">B: Bacteria&nbsp;&nbsp;S: Sensible&nbsp;&nbsp;I: Intermedio&nbsp;&nbsp;R: Resistente</p>
+  </section>
+
+  <!-- ===================== Firma compartida ===================== -->
   <section class="bloque firma" aria-label="Firma del bioanalista">
+    <img id="bio-firma" class="bio-firma" alt="Firma" hidden />
     <p id="bio-nombre" class="bio-nombre"></p>
     <p id="bio-titulo" class="bio-dato" hidden></p>
     <p id="bio-registros" class="bio-dato" hidden></p>
-    <img id="bio-firma" class="bio-firma" alt="Firma" hidden />
     <div class="linea-firma"></div>
     <p class="etiqueta-firma">Firma del Bioanalista</p>
   </section>
@@ -65,6 +112,7 @@
       'use strict'
 
       var FLAG_LABELS = { bajo: 'BAJO', alto: 'ALTO', critico: 'CRÍTICO' }
+      var MICRO_CATEGORIAS = ['bacteriologia', 'urocultivo']
 
       function decodeBase64Url(str) {
         var b64 = str.replace(/-/g, '+').replace(/_/g, '/')
@@ -106,6 +154,32 @@
         return node
       }
 
+      // ---------------------------------------------------------------------
+      // Microbiology detection — mirrors buildReportData flags (SPEC §3.2).
+      // The report-level flags in the payload are authoritative for layout
+      // switching; these helpers classify individual exams to pick the right
+      // specialized block (isolation vs. generic table).
+      // ---------------------------------------------------------------------
+
+      function normalizaCategoria(value) {
+        return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      }
+
+      function esMicroExamen(exam) {
+        if (MICRO_CATEGORIAS.indexOf(normalizaCategoria(exam.categoria)) !== -1) {
+          return true
+        }
+        return /UROCULTIVO|CULTIVO|COPROCULTIVO|BK\b/i.test(exam.nombre || '')
+      }
+
+      function esBKExamen(exam) {
+        return /BK|BACILO/i.test(exam.nombre || '')
+      }
+
+      // ---------------------------------------------------------------------
+      // GENÉRICO renderer (SPEC §1/§2.A) — unchanged WU10 layout.
+      // ---------------------------------------------------------------------
+
       function renderResultRow(row) {
         var tr = el('tr', 'fila-resultado')
         var tdAnalisis = el('td', 'analisis')
@@ -132,6 +206,11 @@
         if (exam.tipoMuestra) {
           section.appendChild(el('p', 'examen-muestra', 'Muestra: ' + exam.tipoMuestra))
         }
+        section.appendChild(renderTablaResultados(exam))
+        return section
+      }
+
+      function renderTablaResultados(exam) {
         var table = el('table', 'tabla-resultados')
         var thead = el('thead')
         var headRow = el('tr')
@@ -145,9 +224,92 @@
           tbody.appendChild(renderResultRow(row))
         })
         table.appendChild(tbody)
-        section.appendChild(table)
+        return table
+      }
+
+      // ---------------------------------------------------------------------
+      // ESPECIALIZADO renderer (SPEC §1/§2.B-§2.C — pill boxes).
+      // ---------------------------------------------------------------------
+
+      function renderExamEspecializado(exam) {
+        var section = el('section', 'report-box examen-esp')
+        if (esBKExamen(exam)) {
+          // BK variant (SPEC §2.C): RESULTADO + COLORACIÓN DE ZIELH NEELSEN.
+          section.appendChild(el('p', 'report-box-title', 'RESULTADO'))
+          section.appendChild(el('p', 'aislamiento-subtitulo', 'COLORACIÓN DE ZIELH NEELSEN:'))
+        } else {
+          section.appendChild(el('p', 'report-box-title', 'RESULTADO'))
+          if (exam.tipoMuestra) {
+            section.appendChild(el('p', 'examen-muestra', 'MUESTRA: ' + exam.tipoMuestra))
+          }
+        }
+        var lista = el('ul', 'lista-aislamiento')
+        exam.resultados.forEach(function (row) {
+          var texto = row.analisis + ': ' + row.resultado
+          lista.appendChild(el('li', null, texto))
+        })
+        section.appendChild(lista)
         return section
       }
+
+      function renderExamEspecializadoNoMicro(exam) {
+        // Non-microbiology exam under the specialized layout: the generic
+        // results table wrapped in a pill box so no validated result is lost.
+        var section = el('section', 'report-box examen-esp')
+        section.appendChild(el('h3', 'examen-titulo examen-titulo-esp', exam.nombre))
+        if (exam.tipoMuestra) {
+          section.appendChild(el('p', 'examen-muestra', 'Muestra: ' + exam.tipoMuestra))
+        }
+        section.appendChild(renderTablaResultados(exam))
+        return section
+      }
+
+      // ---------------------------------------------------------------------
+      // Structured antibiogram (SPEC §2.B table) — ONLY from data.antibiograma.
+      // buildReportData never fabricates it: the box stays hidden otherwise.
+      // ---------------------------------------------------------------------
+
+      function renderAntibiograma(antibiograma) {
+        var container = byId('antibiograma-container')
+        if (!container || !antibiograma || !Array.isArray(antibiograma.filas)) {
+          return
+        }
+        var cepas = Array.isArray(antibiograma.cepas) ? antibiograma.cepas : []
+        var columnas = [antibiograma.filas.slice(0, 10), antibiograma.filas.slice(10, 18), antibiograma.filas.slice(18, 27)]
+        columnas.forEach(function (filasColumna) {
+          if (filasColumna.length === 0) {
+            return
+          }
+          var col = el('div', 'antibiograma-col')
+          var table = el('table', 'tabla-antibiograma')
+          var thead = el('thead')
+          var headRow = el('tr')
+          headRow.appendChild(el('th', 'antibiotico-col', 'ANTIBIÓTICO'))
+          for (var i = 0; i < Math.max(1, cepas.length); i++) {
+            headRow.appendChild(el('th', null, cepas[i] || 'B' + (i + 1)))
+          }
+          thead.appendChild(headRow)
+          table.appendChild(thead)
+          var tbody = el('tbody')
+          filasColumna.forEach(function (fila) {
+            var tr = el('tr')
+            tr.appendChild(el('td', 'antibiotico-col', fila.antibiotico))
+            var valores = Array.isArray(fila.valores) ? fila.valores : []
+            for (var j = 0; j < Math.max(1, cepas.length); j++) {
+              tr.appendChild(el('td', 'valor-antibiograma', valores[j] || ''))
+            }
+            tbody.appendChild(tr)
+          })
+          table.appendChild(tbody)
+          col.appendChild(table)
+          container.appendChild(col)
+        })
+        showIf('antibiograma-caja', true)
+      }
+
+      // ---------------------------------------------------------------------
+      // Payload + layout switch
+      // ---------------------------------------------------------------------
 
       var payload = ''
       try {
@@ -159,6 +321,9 @@
         return
       }
 
+      var formato = data.formato === 'especializado' ? 'especializado' : 'generico'
+      document.body.setAttribute('data-formato', formato)
+
       if (data.copia) {
         byId('marca-copia').hidden = false
       }
@@ -168,21 +333,30 @@
           var logo = byId('logo')
           logo.src = data.header.logo
           logo.hidden = false
+          // ESPECIALIZADO: smaller header mark (SPEC §2.B).
+          var logoEsp = byId('logo-esp')
+          logoEsp.src = data.header.logo
+          logoEsp.hidden = false
         }
         setText('lab-nombre', data.header.nombre || '')
         showIf('lab-rif', data.header.rif).textContent = 'RIF: ' + data.header.rif
         showIf('lab-direccion', data.header.direccion).textContent = data.header.direccion
         showIf('lab-sede', data.header.sede).textContent = data.header.sede
         showIf('lab-telefono', data.header.telefono).textContent = 'Teléfono: ' + data.header.telefono
-      }
 
-      if (data.orden) {
-        setText('orden-id', '#' + data.orden.id)
-        setText('orden-fecha', data.orden.fecha || '')
-        if (data.orden.observaciones) {
-          byId('orden-observaciones').hidden = false
-          setText('orden-observaciones-texto', data.orden.observaciones)
-        }
+        // ESPECIALIZADO institutional box: name + sedes + contact line.
+        setText('lab-nombre-esp', data.header.nombre || '')
+        var sedes = [data.header.sede, data.header.direccion]
+          .filter(function (parte) { return parte })
+          .join(' – ')
+        showIf('lab-sedes-esp', sedes).textContent = sedes
+        var contacto = [
+          data.header.telefono ? 'Tel: ' + data.header.telefono : '',
+          data.header.rif ? 'RIF: ' + data.header.rif : '',
+        ]
+          .filter(function (parte) { return parte })
+          .join(' — ')
+        showIf('lab-contacto-esp', contacto).textContent = contacto
       }
 
       if (data.paciente) {
@@ -191,6 +365,25 @@
         setText('paciente-sexo', data.paciente.sexo || '')
         setText('paciente-edad', data.paciente.edad || '')
         setText('paciente-fecha-nacimiento', data.paciente.fechaNacimiento || '')
+
+        // ESPECIALIZADO patient box (SPEC §2.B): NOMBRE / C.I / SEXO / EDAD / FECHA.
+        setText('pac-esp-nombre', data.paciente.nombreCompleto || '')
+        setText('pac-esp-cedula', data.paciente.cedula || '')
+        setText('pac-esp-sexo', String(data.paciente.sexo || '').charAt(0).toUpperCase())
+        setText('pac-esp-edad', data.paciente.edad || '')
+        setText('pac-esp-fecha', data.orden ? (data.orden.fecha || '') : '')
+      }
+
+      if (data.orden) {
+        setText('orden-id', '#' + data.orden.id)
+        setText('orden-fecha', data.orden.fecha || '')
+        if (data.orden.observaciones) {
+          byId('orden-observaciones').hidden = false
+          setText('orden-observaciones-texto', data.orden.observaciones)
+          // ESPECIALIZADO observaciones box (microscopy narrative, v1 source).
+          showIf('observaciones-caja', true)
+          setText('observaciones-esp-texto', data.orden.observaciones)
+        }
       }
 
       if (data.medicoReferente) {
@@ -203,9 +396,46 @@
       }
 
       var examenesNode = byId('examenes')
+      var examenesEspNode = byId('examenes-esp')
       ;(data.examenes || []).forEach(function (exam) {
-        examenesNode.appendChild(renderExam(exam))
+        if (formato === 'especializado') {
+          if (data.isMicrobiology && esMicroExamen(exam)) {
+            examenesEspNode.appendChild(renderExamEspecializado(exam))
+          } else {
+            examenesEspNode.appendChild(renderExamEspecializadoNoMicro(exam))
+          }
+        } else {
+          examenesNode.appendChild(renderExam(exam))
+        }
       })
+
+      // ESPECIALIZADO patient box (SPEC §2.B) renders for every specialized report.
+      if (formato === 'especializado') {
+        showIf('paciente-caja', true)
+      }
+
+      // ESPECIALIZADO study identification bar (SPEC §2.B / §2.C).
+      if (formato === 'especializado' && data.isMicrobiology) {
+        showIf('informe-caja', true)
+        var microExam = (data.examenes || []).filter(esMicroExamen)[0]
+        if (microExam) {
+          if (esBKExamen(microExam)) {
+            // BK: TIPO DE INFORME | EXAMEN.
+            showIf('informe-examen', true)
+            setText('informe-examen-valor', microExam.nombre || '')
+          } else {
+            // Urocultivo: TIPO DE INFORME | CULTIVO | MUESTRA.
+            showIf('informe-cultivo', true)
+            setText('informe-cultivo-valor', microExam.nombre || '')
+            if (microExam.tipoMuestra) {
+              showIf('informe-muestra', true)
+              setText('informe-muestra-valor', microExam.tipoMuestra)
+            }
+          }
+        }
+      }
+
+      renderAntibiograma(data.antibiograma)
 
       if (data.bioanalista) {
         setText('bio-nombre', data.bioanalista.nombre || '')
