@@ -37,6 +37,7 @@ export interface LabCoreAPI {
     deactivate: (req: RequestOf<IpcChannels['patients:deactivate']>) => Promise<ResponseOf<IpcChannels['patients:deactivate']>>
     merge: (req: RequestOf<IpcChannels['patients:merge']>) => Promise<ResponseOf<IpcChannels['patients:merge']>>
     history: (req: RequestOf<IpcChannels['patients:history']>) => Promise<ResponseOf<IpcChannels['patients:history']>>
+    dossier: (req: RequestOf<IpcChannels['patients:dossier']>) => Promise<ResponseOf<IpcChannels['patients:dossier']>>
   }
   catalog: {
     listExams: (req: RequestOf<IpcChannels['catalog:listExams']>) => Promise<ResponseOf<IpcChannels['catalog:listExams']>>

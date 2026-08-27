@@ -7,6 +7,7 @@ import {
   deactivatePatient,
   getPatient,
   getPatientByCedula,
+  getPatientDossier,
   getPatientHistory,
   listPatients,
   searchPatients,
@@ -14,7 +15,7 @@ import {
 } from '../repositories/patients'
 import { writeAudit } from '../services/audit'
 import type { Patient, Session } from '@/shared/contracts'
-import type { PatientHistoryOrder } from '../repositories/patients'
+import type { PatientHistoryOrder, PatientDossierResult } from '../repositories/patients'
 
 const PATIENT_ROLES = [ROLES.ADMIN, ROLES.BIOANALISTA, ROLES.TECNICO, ROLES.RECEPCION]
 
@@ -123,6 +124,17 @@ export async function handleMergePatients(): Promise<never> {
   throw new Error(ERROR_CODES.CONFLICT)
 }
 
+export async function handlePatientDossier(
+  db: Database.Database,
+  req: { pacienteId: number },
+): Promise<PatientDossierResult> {
+  const dossier = getPatientDossier(db, req.pacienteId)
+  if (!dossier) {
+    throw new Error(ERROR_CODES.NOT_FOUND)
+  }
+  return dossier
+}
+
 export function registerPatientsHandlers(db: Database.Database): void {
   handle(db, 'patients:list', PATIENT_ROLES, patientsChannels['patients:list'].request, handleListPatients)
   handle(db, 'patients:search', PATIENT_ROLES, patientsChannels['patients:search'].request, handleSearchPatients)
@@ -138,4 +150,6 @@ export function registerPatientsHandlers(db: Database.Database): void {
   )
   handle(db, 'patients:history', PATIENT_ROLES, patientsChannels['patients:history'].request, handlePatientHistory)
   handle(db, 'patients:merge', PATIENT_ROLES, patientsChannels['patients:merge'].request, handleMergePatients)
+  handle(db, 'patients:dossier', PATIENT_ROLES, patientsChannels['patients:dossier'].request, handlePatientDossier)
 }
+

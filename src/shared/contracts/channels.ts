@@ -55,6 +55,7 @@ export const CHANNEL_ALLOWLIST = Object.freeze([
   'patients:deactivate',
   'patients:merge',
   'patients:history',
+  'patients:dossier',
 
   // catalog
   'catalog:listExams',

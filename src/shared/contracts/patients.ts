@@ -1,7 +1,8 @@
 import { z } from 'zod'
-import { cedulaSchema, emailSchema, idSchema, isoDateOnlySchema, phoneSchema } from './primitives'
+import { cedulaSchema, emailSchema, idSchema, isoDateOnlySchema, phoneSchema, positiveMoneySchema } from './primitives'
 import { SEX } from './constants'
 import { envelopeSchema } from './errors'
+import { paymentMethodSchema } from './payments'
 
 export const sexSchema = z.enum([SEX.MALE, SEX.FEMALE, SEX.OTHER])
 
@@ -39,6 +40,51 @@ export const patientMergeRequestSchema = z.object({
 
 export type PatientMergeRequest = z.infer<typeof patientMergeRequestSchema>
 
+// ── Dossier 360° ──────────────────────────────────────────────────────────────
+
+export const dossierOrderSchema = z.object({
+  orden_id: idSchema,
+  fecha_solicitud: isoDateOnlySchema,
+  estatus: z.string(),
+  estatus_pago: z.string(),
+  precio_total: positiveMoneySchema,
+  saldo: positiveMoneySchema,
+  examenes: z.array(z.object({ examen_id: idSchema, examen_nombre: z.string() })),
+})
+
+export const dossierPaymentSchema = z.object({
+  id: idSchema,
+  orden_id: idSchema,
+  metodo: paymentMethodSchema,
+  monto_bs: positiveMoneySchema,
+  monto_usd: positiveMoneySchema,
+  fecha: isoDateOnlySchema,
+  cajero: z.string(),
+})
+
+export const dossierResultSchema = z.object({
+  orden_id: idSchema,
+  examen_nombre: z.string(),
+  parametro_nombre: z.string(),
+  valor: z.string().nullable(),
+  unidad: z.string().nullable(),
+  flag: z.string().nullable(),
+})
+
+export const patientDossierSchema = z.object({
+  paciente: patientSchema.extend({ edad: z.number().int().nonnegative() }),
+  balance: z.object({
+    facturado: positiveMoneySchema,
+    pagado: positiveMoneySchema,
+    saldo: z.number(),
+  }),
+  ordenes: z.array(dossierOrderSchema),
+  pagos: z.array(dossierPaymentSchema),
+  resultados: z.array(dossierResultSchema),
+})
+
+export type PatientDossier = z.infer<typeof patientDossierSchema>
+
 export const patientsChannels = {
   'patients:list': {
     request: z.object({ activos: z.boolean().default(true) }),
@@ -72,6 +118,11 @@ export const patientsChannels = {
     request: z.object({ id: idSchema }),
     response: envelopeSchema(z.array(z.unknown())),
   },
+  'patients:dossier': {
+    request: z.object({ pacienteId: idSchema }),
+    response: envelopeSchema(patientDossierSchema),
+  },
 } as const
 
 export type PatientsChannels = typeof patientsChannels
+

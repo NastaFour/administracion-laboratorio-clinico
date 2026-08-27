@@ -4,6 +4,7 @@ import { usePatients } from './usePatients'
 import { PatientList } from './PatientList'
 import { PatientForm } from './PatientForm'
 import { PatientHistory } from './PatientHistory'
+import { PatientDossierModal } from './PatientDossierModal'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { ConfirmDialog } from '../../components/ui/Modal'
@@ -17,6 +18,7 @@ export function PatientsPage() {
   const [editing, setEditing] = useState<Patient | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [historyPatient, setHistoryPatient] = useState<Patient | null>(null)
+  const [dossierPatient, setDossierPatient] = useState<Patient | null>(null)
   const [confirmDeactivate, setConfirmDeactivate] = useState<Patient | null>(null)
 
   const handleCreate = async (input: PatientInput) => {
@@ -82,6 +84,7 @@ export function PatientsPage() {
         onEdit={openEdit}
         onDeactivate={setConfirmDeactivate}
         onHistory={setHistoryPatient}
+        onDossier={setDossierPatient}
       />
 
       <Modal
@@ -104,6 +107,13 @@ export function PatientsPage() {
         onClose={() => setHistoryPatient(null)}
       />
 
+      <PatientDossierModal
+        key={dossierPatient?.id ?? 'dossier-none'}
+        patient={dossierPatient}
+        open={!!dossierPatient}
+        onClose={() => setDossierPatient(null)}
+      />
+
       <ConfirmDialog
         open={!!confirmDeactivate}
         title="Desactivar paciente"
@@ -115,3 +125,4 @@ export function PatientsPage() {
     </div>
   )
 }
+

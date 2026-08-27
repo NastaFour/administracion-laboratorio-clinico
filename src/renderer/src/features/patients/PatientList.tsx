@@ -1,4 +1,4 @@
-import { Search, Edit, Trash2, History } from 'lucide-react'
+import { Search, Edit, Trash2, History, ClipboardList } from 'lucide-react'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import type { Patient } from '@/shared/contracts'
@@ -10,6 +10,7 @@ interface PatientListProps {
   onEdit: (patient: Patient) => void
   onDeactivate: (patient: Patient) => void
   onHistory: (patient: Patient) => void
+  onDossier?: (patient: Patient) => void
 }
 
 export function PatientList({
@@ -19,6 +20,7 @@ export function PatientList({
   onEdit,
   onDeactivate,
   onHistory,
+  onDossier,
 }: PatientListProps) {
   return (
     <div className="space-y-4">
@@ -58,6 +60,18 @@ export function PatientList({
                   <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{patient.telefono ?? '—'}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
+                      {onDossier && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDossier(patient)}
+                          aria-label="Ver ficha 360°"
+                          title="Ficha integral del paciente"
+                          data-testid={`patient-dossier-${patient.id}`}
+                        >
+                          <ClipboardList size={16} className="text-primary-600 dark:text-primary-400" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -96,3 +110,4 @@ export function PatientList({
     </div>
   )
 }
+

@@ -204,3 +204,173 @@ export function getPatientHistory(db: Database.Database, id: number): PatientHis
     })),
   }))
 }
+
+/** Compute patient age in full years from an ISO-8601 date (YYYY-MM-DD) */
+function computeAge(fechaNacimiento: string): number {
+  const today = new Date()
+  const dob = new Date(fechaNacimiento + 'T00:00:00') // local midnight
+  let age = today.getFullYear() - dob.getFullYear()
+  const m = today.getMonth() - dob.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--
+  }
+  return Math.max(0, age)
+}
+
+export interface PatientDossierResult {
+  paciente: {
+    id: number
+    cedula: string
+    nombre: string
+    apellido: string
+    fecha_nacimiento: string
+    sexo: string
+    telefono: string | null
+    email: string | null
+    direccion: string | null
+    activo: boolean
+    edad: number
+  }
+  balance: { facturado: number; pagado: number; saldo: number }
+  ordenes: Array<{
+    orden_id: number
+    fecha_solicitud: string
+    estatus: string
+    estatus_pago: string
+    precio_total: number
+    saldo: number
+    examenes: Array<{ examen_id: number; examen_nombre: string }>
+  }>
+  pagos: Array<{
+    id: number
+    orden_id: number
+    metodo: string
+    monto_bs: number
+    monto_usd: number
+    fecha: string
+    cajero: string
+  }>
+  resultados: Array<{
+    orden_id: number
+    examen_nombre: string
+    parametro_nombre: string
+    valor: string | null
+    unidad: string | null
+    flag: string | null
+  }>
+}
+
+export function getPatientDossier(db: Database.Database, pacienteId: number): PatientDossierResult | null {
+  // 1. Load patient
+  const rawPatient = db.prepare('SELECT * FROM pacientes WHERE id = ?').get(pacienteId) as
+    | Record<string, unknown>
+    | undefined
+  if (!rawPatient) return null
+  const patient = rowToPatient(rawPatient)
+
+  // 2. Balance: facturado = SUM precio_total non-void orders, pagado = SUM payments non-void
+  const balanceRow = db
+    .prepare(
+      `SELECT
+         COALESCE(SUM(o.precio_total), 0) AS facturado,
+         COALESCE((
+           SELECT SUM(p.monto_bs)
+           FROM pagos p
+           JOIN ordenes op ON op.id = p.orden_id
+           WHERE op.paciente_id = ? AND p.anulado = 0 AND op.estatus != 'anulada'
+         ), 0) AS pagado
+       FROM ordenes o
+       WHERE o.paciente_id = ? AND o.estatus != 'anulada'`,
+    )
+    .get(pacienteId, pacienteId) as { facturado: number; pagado: number }
+  const facturado = balanceRow.facturado
+  const pagado = balanceRow.pagado
+
+  // 3. Orders with exams
+  const orderRows = db
+    .prepare(
+      `SELECT id, fecha_solicitud, estatus, estatus_pago, precio_total,
+              COALESCE(precio_total - (
+                SELECT COALESCE(SUM(p.monto_bs),0) FROM pagos p WHERE p.orden_id = ordenes.id AND p.anulado = 0
+              ), precio_total) AS saldo
+       FROM ordenes WHERE paciente_id = ? ORDER BY fecha_solicitud DESC`,
+    )
+    .all(pacienteId) as Array<{
+      id: number
+      fecha_solicitud: string
+      estatus: string
+      estatus_pago: string
+      precio_total: number
+      saldo: number
+    }>
+
+  const examStmt = db.prepare(
+    `SELECT oe.examen_id, ec.nombre AS examen_nombre
+     FROM orden_examenes oe JOIN examenes_catalogo ec ON ec.id = oe.examen_id
+     WHERE oe.orden_id = ?`,
+  )
+
+  const ordenes = orderRows.map((o) => ({
+    orden_id: o.id,
+    fecha_solicitud: o.fecha_solicitud,
+    estatus: o.estatus,
+    estatus_pago: o.estatus_pago,
+    precio_total: o.precio_total,
+    saldo: Math.max(0, o.saldo),
+    examenes: (
+      examStmt.all(o.id) as Array<{ examen_id: number; examen_nombre: string }>
+    ).map((e) => ({ examen_id: e.examen_id, examen_nombre: e.examen_nombre })),
+  }))
+
+  // 4. Payments (non-void)
+  const pagoRows = db
+    .prepare(
+      `SELECT p.id, p.orden_id, p.metodo, p.monto_bs, p.monto_usd, p.fecha,
+              COALESCE(u.nombre_completo, u.username) AS cajero
+       FROM pagos p
+       JOIN ordenes o ON o.id = p.orden_id
+       JOIN usuarios u ON u.id = p.usuario_id
+       WHERE o.paciente_id = ? AND p.anulado = 0
+       ORDER BY p.fecha DESC`,
+    )
+    .all(pacienteId) as Array<{
+      id: number
+      orden_id: number
+      metodo: string
+      monto_bs: number
+      monto_usd: number
+      fecha: string
+      cajero: string
+    }>
+
+  // 5. Results
+  const resultRows = db
+    .prepare(
+      `SELECT rv.orden_id, ec.nombre AS examen_nombre, pc.nombre AS parametro_nombre,
+              rv.valor, pc.unidad, rv.flag
+       FROM resultados_valores rv
+       JOIN orden_examenes oe ON oe.id = rv.orden_examen_id
+       JOIN examenes_catalogo ec ON ec.id = oe.examen_id
+       JOIN parametros_catalogo pc ON pc.id = rv.parametro_id
+       JOIN ordenes o ON o.id = rv.orden_id
+       WHERE o.paciente_id = ?
+       ORDER BY rv.orden_id DESC, ec.nombre, pc.nombre`,
+    )
+    .all(pacienteId) as Array<{
+      orden_id: number
+      examen_nombre: string
+      parametro_nombre: string
+      valor: string | null
+      unidad: string | null
+      flag: string | null
+    }>
+
+  return {
+    paciente: { ...patient, edad: computeAge(patient.fecha_nacimiento) },
+    balance: { facturado, pagado, saldo: facturado - pagado },
+    ordenes,
+    pagos: pagoRows,
+    resultados: resultRows,
+  }
+}
+
