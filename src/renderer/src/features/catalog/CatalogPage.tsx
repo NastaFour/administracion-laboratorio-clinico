@@ -124,11 +124,11 @@ export function CatalogPage() {
       />
 
       {selectedExam && (
-        <div className="rounded-lg border border-paper-200 bg-white p-6 space-y-4">
+        <div className="rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-6 space-y-4 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-ink-900">{selectedExam.nombre}</h3>
-              <p className="text-sm text-ink-500">
+              <h3 className="text-lg font-semibold text-ink-900 dark:text-ink-950">{selectedExam.nombre}</h3>
+              <p className="text-sm text-ink-500 dark:text-ink-600">
                 {selectedExam.codigo} · {selectedExam.categoria} · {selectedExam.tipo_muestra}
               </p>
             </div>

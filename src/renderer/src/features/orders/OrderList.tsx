@@ -1,28 +1,13 @@
 import { Edit2, CreditCard } from 'lucide-react'
 import { cn } from '../../lib/cn'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import type { OrderWithExams } from '@/shared/contracts'
-import { ORDER_STATUS } from '@/shared/contracts'
 
 interface OrderListProps {
   orders: OrderWithExams[]
   canAuthorizeCredit: boolean
   onEdit: (order: OrderWithExams) => void
   onAuthorizeCredit: (order: OrderWithExams) => void
-}
-
-function statusPill(estatus: string): string {
-  switch (estatus) {
-    case ORDER_STATUS.PENDIENTE:
-      return 'bg-amber-100 text-amber-800'
-    case ORDER_STATUS.PROCESANDO:
-      return 'bg-primary-100 text-primary-800'
-    case ORDER_STATUS.COMPLETADA:
-      return 'bg-success-50 text-success-700'
-    case ORDER_STATUS.ENTREGADA:
-      return 'bg-paper-200 text-ink-600'
-    default:
-      return 'bg-paper-100 text-ink-700'
-  }
 }
 
 function formatBs(amount: number): string {
@@ -45,9 +30,9 @@ export function OrderList({ orders, canAuthorizeCredit, onEdit, onAuthorizeCredi
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-paper-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card transition-colors">
       <table className="w-full text-sm">
-        <thead className="bg-paper-100 text-ink-700">
+        <thead className="bg-paper-100 dark:bg-paper-100 text-ink-700 dark:text-ink-700 border-b border-paper-200 dark:border-surface-border">
           <tr>
             <th className="px-4 py-3 text-left font-medium">Nº</th>
             <th className="px-4 py-3 text-left font-medium">Paciente</th>
@@ -58,20 +43,18 @@ export function OrderList({ orders, canAuthorizeCredit, onEdit, onAuthorizeCredi
             <th className="px-4 py-3 text-right font-medium">Acciones</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-paper-100">
+        <tbody className="divide-y divide-paper-100 dark:divide-surface-border">
           {orders.map((order) => (
-            <tr key={order.id} className={cn('hover:bg-paper-50', order.anulada && 'opacity-60')}>
-              <td className="px-4 py-3 text-ink-900 font-medium">{order.id}</td>
-              <td className="px-4 py-3 text-ink-600">#{order.paciente_id}</td>
-              <td className="px-4 py-3 text-ink-600">{order.examenes.length}</td>
-              <td className="px-4 py-3 text-right text-ink-900 font-medium">{formatBs(order.total_bs)}</td>
+            <tr key={order.id} className={cn('hover:bg-paper-50 dark:hover:bg-surface-hover transition-colors', order.anulada && 'opacity-60')}>
+              <td className="px-4 py-3 text-ink-900 dark:text-ink-950 font-medium">{order.id}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">#{order.paciente_id}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{order.examenes.length}</td>
+              <td className="px-4 py-3 text-right text-ink-900 dark:text-ink-950 font-medium">{formatBs(order.total_bs)}</td>
               <td className="px-4 py-3">
-                <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', statusPill(order.estatus))}>
-                  {order.estatus}
-                </span>
-                {order.credito && <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-800">Crédito</span>}
+                <StatusBadge status={order.estatus} />
+                {order.credito && <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-800 dark:bg-accent-100/30 dark:text-accent-400">Crédito</span>}
               </td>
-              <td className="px-4 py-3 text-ink-600">{formatDate(order.fecha)}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{formatDate(order.fecha)}</td>
               <td className="px-4 py-3 text-right">
                 <div className="inline-flex gap-2">
                   {!order.cerrada && !order.anulada && (

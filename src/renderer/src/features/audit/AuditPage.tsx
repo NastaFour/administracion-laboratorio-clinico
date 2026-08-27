@@ -38,14 +38,14 @@ export function AuditPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-paper-200 bg-white p-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-4 transition-colors">
         <div className="min-w-48">
-          <label className="mb-1 block text-xs font-medium text-ink-600" htmlFor="audit-actor">
+          <label className="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-700" htmlFor="audit-actor">
             Actor
           </label>
           <select
             id="audit-actor"
-            className="w-full rounded-md border border-paper-300 bg-white px-3 py-2 text-sm text-ink-900"
+            className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-sm text-ink-900 dark:text-ink-950"
             value={filters.usuarioId ?? ''}
             onChange={(event) =>
               setFilters({
@@ -64,12 +64,12 @@ export function AuditPage() {
           </select>
         </div>
         <div className="min-w-48">
-          <label className="mb-1 block text-xs font-medium text-ink-600" htmlFor="audit-action">
+          <label className="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-700" htmlFor="audit-action">
             Acción
           </label>
           <select
             id="audit-action"
-            className="w-full rounded-md border border-paper-300 bg-white px-3 py-2 text-sm text-ink-900"
+            className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-sm text-ink-900 dark:text-ink-950"
             value={filters.accion ?? ''}
             onChange={(event) =>
               setFilters({ ...filters, accion: (event.target.value || undefined) as AuditAction | undefined })
@@ -85,12 +85,12 @@ export function AuditPage() {
           </select>
         </div>
         <div className="min-w-48">
-          <label className="mb-1 block text-xs font-medium text-ink-600" htmlFor="audit-entity">
+          <label className="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-700" htmlFor="audit-entity">
             Entidad
           </label>
           <select
             id="audit-entity"
-            className="w-full rounded-md border border-paper-300 bg-white px-3 py-2 text-sm text-ink-900"
+            className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-sm text-ink-900 dark:text-ink-950"
             value={filters.entidad ?? ''}
             onChange={(event) =>
               setFilters({ ...filters, entidad: (event.target.value || undefined) as AuditEntity | undefined })
@@ -149,10 +149,10 @@ export function AuditPage() {
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-paper-200 bg-white">
+          <div className="overflow-x-auto rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card transition-colors">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500">
+              <thead className="bg-paper-100 dark:bg-paper-100">
+                <tr className="border-b border-paper-200 dark:border-surface-border text-left text-xs uppercase tracking-wide text-ink-600 dark:text-ink-700">
                   <th className="px-4 py-3">Fecha</th>
                   <th className="px-4 py-3">Actor</th>
                   <th className="px-4 py-3">Acción</th>
@@ -160,7 +160,7 @@ export function AuditPage() {
                   <th className="px-4 py-3 text-right">Referencia</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-paper-100 dark:divide-surface-border">
                 {pageEntries.map((entry) => (
                   <tr key={entry.id} className="border-b border-paper-100" data-testid={`audit-row-${entry.id}`}>
                     <td className="px-4 py-2.5 tabular-nums">{formatDateTime(entry.creado_en)}</td>

@@ -18,9 +18,9 @@ export function MedicoList({ medicos, canManage, onEdit, onDeactivate }: MedicoL
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-paper-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card transition-colors">
       <table className="w-full text-sm">
-        <thead className="bg-paper-100 text-ink-700">
+        <thead className="bg-paper-100 dark:bg-paper-100 text-ink-700 dark:text-ink-700 border-b border-paper-200 dark:border-surface-border">
           <tr>
             <th className="px-4 py-3 text-left font-medium">Nombre</th>
             <th className="px-4 py-3 text-left font-medium">Especialidad</th>
@@ -29,13 +29,13 @@ export function MedicoList({ medicos, canManage, onEdit, onDeactivate }: MedicoL
             {canManage && <th className="px-4 py-3 text-right font-medium">Acciones</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-paper-100">
+        <tbody className="divide-y divide-paper-100 dark:divide-surface-border">
           {medicos.map((medico) => (
-            <tr key={medico.id} className="hover:bg-paper-50">
-              <td className="px-4 py-3 text-ink-900 font-medium">{medico.nombre}</td>
-              <td className="px-4 py-3 text-ink-600">{medico.especialidad}</td>
-              <td className="px-4 py-3 text-ink-600">{medico.cedula ?? '—'}</td>
-              <td className="px-4 py-3 text-ink-600">{medico.telefono ?? '—'}</td>
+            <tr key={medico.id} className="hover:bg-paper-50 dark:hover:bg-surface-hover transition-colors">
+              <td className="px-4 py-3 text-ink-900 dark:text-ink-950 font-medium">{medico.nombre}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{medico.especialidad}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{medico.cedula ?? '—'}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{medico.telefono ?? '—'}</td>
               {canManage && (
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex gap-2">

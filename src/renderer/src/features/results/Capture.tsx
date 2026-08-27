@@ -61,29 +61,29 @@ export function CapturePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <div className="rounded-lg border border-paper-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-ink-900 mb-3 flex items-center gap-2">
+          <div className="rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-4 transition-colors">
+            <h3 className="text-sm font-semibold text-ink-900 dark:text-ink-950 mb-3 flex items-center gap-2">
               <Search size={16} />
               Órdenes
             </h3>
-            {ordersLoading && <p className="text-ink-500 text-sm">Cargando órdenes…</p>}
+            {ordersLoading && <p className="text-ink-500 dark:text-ink-600 text-sm">Cargando órdenes…</p>}
             <div className="space-y-2 max-h-[60vh] overflow-auto">
               {orders.map((order) => (
                 <button
                   key={order.id}
                   onClick={() => selectOrder(order)}
                   className={cn(
-                    'w-full text-left rounded-md border px-3 py-2 transition-colors',
+                    'w-full text-left rounded-md border px-3 py-2 transition-all active:scale-[0.99]',
                     selectedOrder?.id === order.id
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-paper-200 hover:bg-paper-50',
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-100/30 text-primary-900 dark:text-primary-300 shadow-2xs'
+                      : 'border-paper-200 dark:border-surface-border hover:bg-paper-50 dark:hover:bg-surface-hover',
                   )}
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-ink-900">Orden #{order.id}</p>
-                    <span className="text-xs text-ink-500 capitalize">{order.estatus}</span>
+                    <p className="text-sm font-medium text-ink-900 dark:text-ink-950">Orden #{order.id}</p>
+                    <span className="text-xs text-ink-500 dark:text-ink-600 capitalize">{order.estatus}</span>
                   </div>
-                  <p className="text-xs text-ink-500">{order.examenes.length} exámenes</p>
+                  <p className="text-xs text-ink-500 dark:text-ink-600">{order.examenes.length} exámenes</p>
                 </button>
               ))}
               {!ordersLoading && orders.length === 0 && (
@@ -246,14 +246,14 @@ function ResultRow({ param, ordenExamenId, onSaved }: ResultRowProps) {
   }
 
   return (
-    <div className="rounded-lg border border-paper-200 bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-4 space-y-3 transition-colors">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-ink-900">{param.nombre}</p>
-            {param.unidad && <span className="text-sm text-ink-500">{param.unidad}</span>}
+            <p className="font-medium text-ink-900 dark:text-ink-950">{param.nombre}</p>
+            {param.unidad && <span className="text-sm text-ink-500 dark:text-ink-600">{param.unidad}</span>}
           </div>
-          <p className="text-sm text-ink-600 mt-1">{bandLabel(param.banda)}</p>
+          <p className="text-sm text-ink-600 dark:text-ink-700 mt-1">{bandLabel(param.banda)}</p>
         </div>
         <StatusPill status={status} flag={existing?.flag ?? null} />
       </div>

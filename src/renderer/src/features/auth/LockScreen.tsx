@@ -16,25 +16,25 @@ export function LockScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-paper-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm bg-white rounded-xl shadow-lg p-8 space-y-6">
+    <div className="min-h-screen bg-paper-100 dark:bg-paper-50 flex items-center justify-center p-6 transition-colors">
+      <div className="w-full max-w-sm bg-white dark:bg-surface-card border border-paper-200 dark:border-surface-border rounded-xl shadow-lg p-8 space-y-6">
         <div className="text-center space-y-2">
-          <div className="mx-auto h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-lg font-semibold">
+          <div className="mx-auto h-12 w-12 rounded-full bg-primary-100 dark:bg-primary-100/30 flex items-center justify-center text-primary-700 dark:text-primary-400 text-lg font-semibold">
             {session?.nombre.charAt(0).toUpperCase()}
           </div>
-          <h2 className="text-xl font-semibold text-ink-900">Sesión bloqueada</h2>
-          <p className="text-ink-500 text-sm">Ingrese su clave para continuar</p>
+          <h2 className="text-xl font-semibold text-ink-900 dark:text-ink-950 font-heading">Sesión bloqueada</h2>
+          <p className="text-ink-500 dark:text-ink-600 text-sm">Ingrese su clave para continuar</p>
         </div>
 
         {error && (
-          <div className="rounded-md bg-danger-50 text-danger-700 px-4 py-3 text-sm" role="alert">
+          <div className="rounded-md bg-danger-50 text-danger-700 dark:bg-danger-100/30 dark:text-danger-400 px-4 py-3 text-sm" role="alert">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="clave-bloqueo" className="block text-sm font-medium text-ink-700">
+            <label htmlFor="clave-bloqueo" className="block text-sm font-medium text-ink-700 dark:text-ink-700">
               Clave
             </label>
             <input
@@ -42,7 +42,7 @@ export function LockScreen() {
               type="password"
               value={clave}
               onChange={(e) => setClave(e.target.value)}
-              className="w-full rounded-md border border-paper-300 px-3 py-2 text-ink-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-ink-900 dark:text-ink-950 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               autoComplete="current-password"
               disabled={loading}
             />

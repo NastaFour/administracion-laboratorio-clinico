@@ -25,15 +25,15 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-ink-900" data-testid="dashboard-heading">
+        <h2 className="text-xl font-semibold text-ink-900 dark:text-ink-950" data-testid="dashboard-heading">
           Panel de control
         </h2>
-        <p className="text-sm text-ink-500">
+        <p className="text-sm text-ink-500 dark:text-ink-600">
           Datos reales del laboratorio: actividad de hoy, deudores, estadísticas y tendencias.
         </p>
       </div>
 
-      <div className="flex gap-1 rounded-lg border border-paper-200 bg-white p-1" role="tablist" aria-label="Vistas del panel">
+      <div className="flex gap-1 rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-1 transition-colors" role="tablist" aria-label="Vistas del panel">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -41,8 +41,10 @@ export function DashboardPage() {
             aria-selected={tab === id}
             onClick={() => setTab(id)}
             className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-              tab === id ? 'bg-primary-600 text-white' : 'text-ink-600 hover:bg-paper-100',
+              'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all active:scale-[0.98]',
+              tab === id
+                ? 'bg-primary-600 dark:bg-primary-500 text-white font-semibold shadow-xs'
+                : 'text-ink-600 dark:text-ink-700 hover:bg-paper-100 dark:hover:bg-surface-hover hover:text-ink-900 dark:hover:text-ink-950',
             )}
             data-testid={`dashboard-tab-${id}`}
           >

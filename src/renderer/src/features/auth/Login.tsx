@@ -39,15 +39,15 @@ export function Login() {
   const debeCambiar = session?.debe_cambiar_clave ?? false
 
   return (
-    <div className="min-h-screen bg-paper-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm bg-white rounded-xl shadow-lg p-8 space-y-6">
+    <div className="min-h-screen bg-paper-50 dark:bg-paper-50 flex items-center justify-center p-6 transition-colors">
+      <div className="w-full max-w-sm bg-white dark:bg-surface-card border border-paper-200 dark:border-surface-border rounded-xl shadow-lg p-8 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold text-primary-700">LabCore</h1>
-          <p className="text-ink-500 text-sm">Inicie sesión para continuar</p>
+          <h1 className="text-2xl font-semibold text-primary-700 dark:text-primary-400">LabCore</h1>
+          <p className="text-ink-500 dark:text-ink-600 text-sm">Inicie sesión para continuar</p>
         </div>
 
         {(error || localError) && (
-          <div className="rounded-md bg-danger-50 text-danger-700 px-4 py-3 text-sm" role="alert">
+          <div className="rounded-md bg-danger-50 text-danger-700 dark:bg-danger-100/30 dark:text-danger-400 px-4 py-3 text-sm" role="alert">
             {error ?? localError}
           </div>
         )}
@@ -55,7 +55,7 @@ export function Login() {
         {!debeCambiar ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label htmlFor="usuario" className="block text-sm font-medium text-ink-700">
+              <label htmlFor="usuario" className="block text-sm font-medium text-ink-700 dark:text-ink-700">
                 Usuario
               </label>
               <input
@@ -63,13 +63,13 @@ export function Login() {
                 type="text"
                 value={usuario}
                 onChange={(e) => setUsuario(e.target.value)}
-                className="w-full rounded-md border border-paper-300 px-3 py-2 text-ink-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-ink-900 dark:text-ink-950 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 autoComplete="username"
                 disabled={loading}
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor="clave" className="block text-sm font-medium text-ink-700">
+              <label htmlFor="clave" className="block text-sm font-medium text-ink-700 dark:text-ink-700">
                 Clave
               </label>
               <input
@@ -77,7 +77,7 @@ export function Login() {
                 type="password"
                 value={clave}
                 onChange={(e) => setClave(e.target.value)}
-                className="w-full rounded-md border border-paper-300 px-3 py-2 text-ink-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-ink-900 dark:text-ink-950 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 autoComplete="current-password"
                 disabled={loading}
               />

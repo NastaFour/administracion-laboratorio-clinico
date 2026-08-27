@@ -117,7 +117,7 @@ export function HistoryPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-paper-200 bg-white p-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card p-4 transition-colors">
         <Input
           label="Desde"
           type="date"
@@ -131,14 +131,14 @@ export function HistoryPage() {
           onChange={(event) => setFilters({ ...filters, hasta: event.target.value || undefined })}
         />
         <div className="min-w-56">
-          <label className="mb-1 block text-xs font-medium text-ink-600" htmlFor="history-patient">
+          <label className="mb-1 block text-xs font-medium text-ink-600 dark:text-ink-700" htmlFor="history-patient">
             Paciente
           </label>
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               id="history-patient"
-              className="w-full rounded-md border border-paper-300 bg-white py-2 pl-8 pr-8 text-sm text-ink-900 focus:border-primary-500 focus:outline-none"
+              className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card py-2 pl-8 pr-8 text-sm text-ink-900 dark:text-ink-950 focus:border-primary-500 focus:outline-none"
               placeholder="Cédula, nombre o apellido…"
               value={patientQuery}
               onChange={(event) => void handlePatientSearch(event.target.value)}
@@ -148,19 +148,19 @@ export function HistoryPage() {
               <button
                 type="button"
                 onClick={clearPatient}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700 dark:hover:text-ink-300"
                 aria-label="Quitar filtro de paciente"
               >
                 <X size={14} />
               </button>
             )}
             {patientResults.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-md border border-paper-200 bg-white shadow-lg">
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-md border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card shadow-lg">
                 {patientResults.map((patient) => (
                   <li key={patient.id}>
                     <button
                       type="button"
-                      className="block w-full px-3 py-2 text-left text-sm hover:bg-primary-50"
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-primary-50 dark:hover:bg-surface-hover"
                       onClick={() => pickPatient(patient)}
                     >
                       <span className="font-medium text-ink-900">
@@ -267,10 +267,10 @@ export function HistoryPage() {
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-paper-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card transition-colors">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-paper-200 text-left text-xs uppercase tracking-wide text-ink-500">
+            <thead className="bg-paper-100 dark:bg-paper-100">
+              <tr className="border-b border-paper-200 dark:border-surface-border text-left text-xs uppercase tracking-wide text-ink-600 dark:text-ink-700">
                 <th className="px-4 py-3">Fecha</th>
                 <th className="px-4 py-3">Paciente</th>
                 <th className="px-4 py-3">Cédula</th>
