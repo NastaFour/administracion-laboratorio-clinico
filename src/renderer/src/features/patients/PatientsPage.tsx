@@ -7,9 +7,11 @@ import { PatientHistory } from './PatientHistory'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { ConfirmDialog } from '../../components/ui/Modal'
+import { useToast } from '../../components/ui/useToast'
 import type { Patient, PatientInput } from '@/shared/contracts'
 
 export function PatientsPage() {
+  const toast = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const { patients, loading, error, create, update, deactivate } = usePatients({ searchQuery })
   const [editing, setEditing] = useState<Patient | null>(null)
@@ -21,6 +23,7 @@ export function PatientsPage() {
     const result = await create(input)
     if (!result.ok) return { ok: false, error: result.error }
     setShowForm(false)
+    toast.success('Paciente registrado exitosamente.')
     return { ok: true }
   }
 
@@ -30,12 +33,14 @@ export function PatientsPage() {
     if (!result.ok) return { ok: false, error: result.error }
     setEditing(null)
     setShowForm(false)
+    toast.success('Paciente actualizado exitosamente.')
     return { ok: true }
   }
 
   const confirmDeactivatePatient = async () => {
     if (!confirmDeactivate) return
     await deactivate(confirmDeactivate.id)
+    toast.success('Paciente desactivado.')
     setConfirmDeactivate(null)
   }
 

@@ -222,21 +222,51 @@ export function OrderForm({ order, onSaved, onCancel, onSubmit }: OrderFormProps
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-ink-700">Exámenes</label>
-        {errors.selectedExamIds && <p className="text-sm text-danger-600">{errors.selectedExamIds}</p>}
-        <div className="max-h-60 overflow-auto rounded-md border border-paper-200 bg-white">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-medium text-ink-700 dark:text-ink-700">Exámenes</label>
+          <span className="text-xs font-medium text-primary-700 dark:text-primary-400">
+            {form.selectedExamIds.size} seleccionados
+          </span>
+        </div>
+        {errors.selectedExamIds && <p className="text-sm text-danger-600 dark:text-danger-400">{errors.selectedExamIds}</p>}
+
+        {selectedExams.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 p-2 bg-paper-50 dark:bg-surface-card rounded-md border border-paper-200 dark:border-surface-border animate-fade-in">
+            {selectedExams.map((ex) => (
+              <span
+                key={ex.id}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-100/30 text-primary-800 dark:text-primary-300"
+              >
+                {ex.nombre} ({formatBs(ex.precio)})
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleExam(ex.id)
+                  }}
+                  className="hover:text-danger-600 dark:hover:text-danger-400 font-bold ml-1"
+                  title="Remover examen"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="max-h-60 overflow-auto rounded-md border border-paper-200 dark:border-surface-border bg-white dark:bg-surface-card">
           {exams.length === 0 ? (
-            <p className="p-4 text-sm text-ink-500">No hay exámenes activos en el catálogo.</p>
+            <p className="p-4 text-sm text-ink-500 dark:text-ink-600">No hay exámenes activos en el catálogo.</p>
           ) : (
-            <ul className="divide-y divide-paper-100">
+            <ul className="divide-y divide-paper-100 dark:divide-surface-border">
               {exams.map((exam) => {
                 const selected = form.selectedExamIds.has(exam.id)
                 return (
                   <li
                     key={exam.id}
                     className={cn(
-                      'flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-paper-50',
-                      selected && 'bg-primary-50',
+                      'flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-paper-50 dark:hover:bg-surface-hover transition-colors',
+                      selected && 'bg-primary-50 dark:bg-primary-100/30',
                     )}
                     onClick={() => toggleExam(exam.id)}
                   >
@@ -249,13 +279,13 @@ export function OrderForm({ order, onSaved, onCancel, onSubmit }: OrderFormProps
                         onClick={(e) => e.stopPropagation()}
                       />
                       <div>
-                        <p className="text-sm font-medium text-ink-900">{exam.nombre}</p>
-                        <p className="text-xs text-ink-500">
+                        <p className="text-sm font-medium text-ink-900 dark:text-ink-950">{exam.nombre}</p>
+                        <p className="text-xs text-ink-500 dark:text-ink-600">
                           {exam.codigo} · {exam.categoria}
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-ink-700">{formatBs(exam.precio)}</span>
+                    <span className="text-sm font-medium text-ink-700 dark:text-ink-700">{formatBs(exam.precio)}</span>
                   </li>
                 )
               })}
@@ -265,7 +295,7 @@ export function OrderForm({ order, onSaved, onCancel, onSubmit }: OrderFormProps
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="observaciones" className="block text-sm font-medium text-ink-700">
+        <label htmlFor="observaciones" className="block text-sm font-medium text-ink-700 dark:text-ink-700">
           Observaciones
         </label>
         <textarea
@@ -274,13 +304,13 @@ export function OrderForm({ order, onSaved, onCancel, onSubmit }: OrderFormProps
           onChange={(e) => setForm((prev) => ({ ...prev, observaciones: e.target.value }))}
           rows={3}
           placeholder="Indicaciones clínicas, ayunas, etc."
-          className="w-full rounded-md border border-paper-300 px-3 py-2 text-ink-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="w-full rounded-md border border-paper-300 dark:border-surface-border bg-white dark:bg-surface-card px-3 py-2 text-ink-900 dark:text-ink-950 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
       </div>
 
-      <div className="flex items-center justify-between rounded-md bg-paper-100 px-4 py-3">
-        <span className="text-sm font-medium text-ink-700">Total estimado</span>
-        <span className="text-lg font-bold text-primary-700">{formatBs(computedTotal)}</span>
+      <div className="flex items-center justify-between rounded-md bg-paper-100 dark:bg-surface-card px-4 py-3 border border-paper-200 dark:border-surface-border">
+        <span className="text-sm font-medium text-ink-700 dark:text-ink-700">Total estimado</span>
+        <span className="text-lg font-bold text-primary-700 dark:text-primary-400">{formatBs(computedTotal)}</span>
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

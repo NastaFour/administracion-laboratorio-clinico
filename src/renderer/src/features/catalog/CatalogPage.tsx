@@ -121,6 +121,7 @@ export function CatalogPage() {
         onSelect={setSelectedExam}
         onEdit={openEditExam}
         onDeactivate={setConfirmDeactivateExam}
+        canManage={canManage}
       />
 
       {selectedExam && (

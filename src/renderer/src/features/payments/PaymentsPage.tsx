@@ -5,11 +5,14 @@ import { PaymentList } from './List'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
+import { useToast } from '../../components/ui/useToast'
 import type { RecordPaymentRequest } from '@/shared/contracts'
 
 export function PaymentsPage() {
+  const toast = useToast()
   const [ordenInput, setOrdenInput] = useState('')
   const [ordenId, setOrdenId] = useState<number | null>(null)
+  const [orderError, setOrderError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [cancelId, setCancelId] = useState<number | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -21,12 +24,17 @@ export function PaymentsPage() {
     const parsed = Number(ordenInput)
     if (Number.isInteger(parsed) && parsed > 0) {
       setOrdenId(parsed)
+      setOrderError(null)
+    } else {
+      setOrderError('Ingrese un número de orden válido.')
     }
   }
 
   const handleSubmit = async (req: RecordPaymentRequest) => {
     const result = await record(req)
     if (!result.ok) return { ok: false, error: result.error }
+    setShowForm(false)
+    toast.success('Pago registrado exitosamente.')
     return { ok: true }
   }
 
@@ -35,6 +43,11 @@ export function PaymentsPage() {
     const result = await cancel(cancelId, motivo.trim() || 'Anulado por el cajero')
     setCancelId(null)
     setMotivo('')
+    if (!result.ok) {
+      toast.error(result.error ?? 'No se pudo anular el pago.')
+    } else {
+      toast.success('Pago anulado exitosamente.')
+    }
     return result
   }
 
@@ -47,18 +60,28 @@ export function PaymentsPage() {
         <p className="text-sm text-ink-500">Registre pagos y consulte el saldo de cada orden.</p>
       </div>
 
-      <div className="flex items-end gap-4">
-        <Input
-          label="Orden #"
-          type="number"
-          min={1}
-          value={ordenInput}
-          onChange={(e) => setOrdenInput(e.target.value)}
-          placeholder="Ingrese el número de orden"
-        />
-        <Button type="button" variant="secondary" onClick={loadOrder}>
-          Cargar
-        </Button>
+      <div className="space-y-2">
+        <div className="flex items-end gap-4">
+          <Input
+            label="Orden #"
+            type="number"
+            min={1}
+            value={ordenInput}
+            onChange={(e) => {
+              setOrdenInput(e.target.value)
+              if (orderError) setOrderError(null)
+            }}
+            placeholder="Ingrese el número de orden"
+          />
+          <Button type="button" variant="secondary" onClick={loadOrder}>
+            Cargar
+          </Button>
+        </div>
+        {orderError && (
+          <p className="text-xs text-danger-600 dark:text-danger-400" role="alert">
+            {orderError}
+          </p>
+        )}
       </div>
 
       {error && (
