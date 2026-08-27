@@ -39,13 +39,14 @@ function rangeToInput(range: ReferenceRange): ReferenceRangeInput {
   }
 }
 
+const UNIT_LABELS: Record<string, string> = {
+  [AGE_UNIT.DIAS]: 'días',
+  [AGE_UNIT.MESES]: 'meses',
+  [AGE_UNIT.ANIOS]: 'años',
+}
+
 function formatRange(range: ReferenceRange): string {
-  const unitLabel: Record<string, string> = {
-    [AGE_UNIT.DIAS]: 'días',
-    [AGE_UNIT.MESES]: 'meses',
-    [AGE_UNIT.ANIOS]: 'años',
-  }
-  const ageText = `${range.edad_min}–${range.edad_max} ${unitLabel[range.edad_unidad]}`
+  const ageText = `${range.edad_min}–${range.edad_max} ${UNIT_LABELS[range.edad_unidad] ?? range.edad_unidad}`
   const valueText = [range.valor_min, range.valor_max]
     .map((v) => (v === null ? '—' : String(v)))
     .join(' – ')
@@ -126,7 +127,7 @@ export function RangeEditor({ parametroId, canManage }: RangeEditorProps) {
                 <tr key={range.id} className="bg-white hover:bg-paper-50">
                   <td className="px-3 py-2 text-ink-700">{range.sexo}</td>
                   <td className="px-3 py-2 text-ink-700">
-                    {range.edad_min}–{range.edad_max} {range.edad_unidad}
+                    {range.edad_min}–{range.edad_max} {UNIT_LABELS[range.edad_unidad] ?? range.edad_unidad}
                   </td>
                   <td className="px-3 py-2 text-ink-700">
                     {range.valor_min ?? '—'} – {range.valor_max ?? '—'}

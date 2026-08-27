@@ -10,9 +10,10 @@ import { Label } from './Label'
 import { Button } from '../../components/ui/Button'
 import { cn } from '../../lib/cn'
 import type { OrderWithExams, Sample, SampleStatus, Patient } from '@/shared/contracts'
+import { ORDER_STATUS, SAMPLE_STATUS } from '@/shared/contracts'
 
 export function SamplingPage() {
-  const { orders, loading: ordersLoading } = useOrders({ estatus: 'Pendiente' })
+  const { orders, loading: ordersLoading } = useOrders({ estatus: ORDER_STATUS.PENDIENTE })
   const [selectedOrder, setSelectedOrder] = useState<OrderWithExams | null>(null)
   const [patientsMap, setPatientsMap] = useState<Map<number, Patient>>(new Map())
 
@@ -39,7 +40,7 @@ export function SamplingPage() {
     selectedOrder?.id ?? null,
   )
 
-  const canRegister = samples.length === 0 || samples.every((s) => s.estatus === 'Rechazada')
+  const canRegister = samples.length === 0 || samples.every((s) => s.estatus === SAMPLE_STATUS.RECHAZADA)
 
   const [registerOpen, setRegisterOpen] = useState(false)
   const [statusSample, setStatusSample] = useState<Sample | null>(null)

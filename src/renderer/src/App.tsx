@@ -42,6 +42,7 @@ import { useToast } from './components/ui/useToast'
 import { Button } from './components/ui/Button'
 import { Modal } from './components/ui/Modal'
 import { Input } from './components/ui/Input'
+import { APP_NAME } from './lib/constants'
 import { cn } from './lib/cn'
 import type { PatientInput } from '@/shared/contracts'
 
@@ -178,7 +179,7 @@ function AppContent() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-ink-900 dark:text-ink-950 font-heading leading-tight tracking-tight">
-                LabCore
+                {APP_NAME}
               </h1>
               <p className="text-xs text-primary-600 dark:text-primary-400 font-semibold uppercase tracking-wider">
                 v2.0

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSessionStore } from '../../stores/useSessionStore'
 import { cn } from '../../lib/cn'
+import { APP_NAME } from '../../lib/constants'
 
 export function Login() {
   const { login, changePassword, loading, error, session, clearError } = useSessionStore()
@@ -42,7 +43,7 @@ export function Login() {
     <div className="min-h-screen bg-paper-50 dark:bg-paper-50 flex items-center justify-center p-6 transition-colors">
       <div className="w-full max-w-sm bg-white dark:bg-surface-card border border-paper-200 dark:border-surface-border rounded-xl shadow-lg p-8 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold text-primary-700 dark:text-primary-400">LabCore</h1>
+          <h1 className="text-2xl font-semibold text-primary-700 dark:text-primary-400">{APP_NAME}</h1>
           <p className="text-ink-500 dark:text-ink-600 text-sm">Inicie sesión para continuar</p>
         </div>
 

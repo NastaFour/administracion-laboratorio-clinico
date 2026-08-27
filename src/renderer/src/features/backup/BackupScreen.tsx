@@ -206,7 +206,7 @@ export function BackupScreen() {
             disabled={!importPath.trim() || previewing}
             data-testid="import-preview-button"
           >
-            {previewing ? 'Analizando…' : 'Previsualizar'}
+            {previewing ? 'Analizando…' : 'Vista previa'}
           </Button>
         </div>
         {importError && <p className="text-sm text-danger-600" role="alert">{importError}</p>}

@@ -324,3 +324,39 @@ body {
   font-weight: 700;
   color: var(--critico-ink);
 }
+
+/* ---------------------------------------------------------------------------
+ * Preview Toolbar
+ * ------------------------------------------------------------------------- */
+
+.barra-acciones-preview {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 5mm;
+  padding-bottom: 3mm;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.btn-imprimir {
+  background-color: var(--petrol);
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 9pt;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-imprimir:hover {
+  opacity: 0.9;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

@@ -13,15 +13,15 @@ interface SampleListProps {
 function statusPill(estatus: string): string {
   switch (estatus) {
     case SAMPLE_STATUS.RECOLECTADA:
-      return 'bg-amber-100 text-amber-800'
+      return 'bg-warning-100 dark:bg-warning-100/30 text-warning-800 dark:text-warning-300'
     case SAMPLE_STATUS.EN_PROCESO:
-      return 'bg-primary-100 text-primary-800'
+      return 'bg-primary-100 dark:bg-primary-100/30 text-primary-800 dark:text-primary-300'
     case SAMPLE_STATUS.RESULTADA:
-      return 'bg-success-50 text-success-700'
+      return 'bg-success-50 dark:bg-success-100/30 text-success-700 dark:text-success-300'
     case SAMPLE_STATUS.RECHAZADA:
-      return 'bg-danger-100 text-danger-700'
+      return 'bg-danger-100 dark:bg-danger-100/30 text-danger-700 dark:text-danger-300'
     default:
-      return 'bg-paper-100 text-ink-700'
+      return 'bg-paper-100 dark:bg-paper-200 text-ink-700 dark:text-ink-800'
   }
 }
 
@@ -58,38 +58,38 @@ export function SampleList({ samples, onUpdateStatus, onReject, onLabel }: Sampl
             <th className="px-4 py-3 text-right font-medium">Acciones</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-paper-100">
+        <tbody className="divide-y divide-paper-100 dark:divide-surface-border">
           {samples.map((sample) => (
-            <tr key={sample.id} className={cn('hover:bg-paper-50', sample.estatus === 'Rechazada' && 'opacity-60')}>
-              <td className="px-4 py-3 text-ink-900 font-medium">{sample.codigo}</td>
-              <td className="px-4 py-3 text-ink-600">{sample.tipo_muestra}</td>
-              <td className="px-4 py-3 text-ink-600">{formatDate(sample.recoleccion_en)}</td>
+            <tr key={sample.id} className={cn('hover:bg-paper-50 dark:hover:bg-surface-hover transition-colors', sample.estatus === SAMPLE_STATUS.RECHAZADA && 'opacity-60')}>
+              <td className="px-4 py-3 text-ink-900 dark:text-ink-950 font-medium">{sample.codigo}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{sample.tipo_muestra}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{formatDate(sample.recoleccion_en)}</td>
               <td className="px-4 py-3">
                 <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', statusPill(sample.estatus))}>
                   {sample.estatus}
                 </span>
               </td>
-              <td className="px-4 py-3 text-ink-600">{sample.motivo_rechazo ?? '—'}</td>
+              <td className="px-4 py-3 text-ink-600 dark:text-ink-700">{sample.motivo_rechazo ?? '—'}</td>
               <td className="px-4 py-3 text-right">
                 <div className="inline-flex gap-2">
                   <button
                     onClick={() => onUpdateStatus(sample)}
-                    className="p-1.5 text-ink-500 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+                    className="p-1.5 text-ink-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-100/30 rounded-md transition-colors"
                     aria-label={`Cambiar estatus de ${sample.codigo}`}
                   >
                     <Edit3 size={16} />
                   </button>
                   <button
                     onClick={() => onLabel(sample)}
-                    className="p-1.5 text-ink-500 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+                    className="p-1.5 text-ink-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-100/30 rounded-md transition-colors"
                     aria-label={`Imprimir etiqueta de ${sample.codigo}`}
                   >
                     <Printer size={16} />
                   </button>
-                  {sample.estatus !== 'Rechazada' && (
+                  {sample.estatus !== SAMPLE_STATUS.RECHAZADA && (
                     <button
                       onClick={() => onReject(sample)}
-                      className="p-1.5 text-ink-500 hover:text-danger-600 hover:bg-danger-50 rounded-md transition-colors"
+                      className="p-1.5 text-ink-500 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-100/30 rounded-md transition-colors"
                       aria-label={`Rechazar ${sample.codigo}`}
                     >
                       <Trash2 size={16} />
