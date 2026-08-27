@@ -31,14 +31,14 @@ export function OrdersPage({ onNavigateToHistory }: OrdersPageProps = {}) {
     estatus: '',
     pendientePago: '',
   })
-  // M4: uniform period navigation — default to today (Día), switch to
-  // Semana/Mes/Año with the PeriodSelector.
-  const [period, setPeriod] = useState<PeriodRange>(() => getPeriodRange('dia'))
+  // M4: uniform period navigation — default "Todos" so pending and paid orders
+  // from any day are visible without searching; Semana/Mes/Año via the selector.
+  const [period, setPeriod] = useState<PeriodRange>(() => getPeriodRange('todos'))
   const { orders, loading, error, refetch, create, update, deliver, voidOrder, authorizeCredit } = useOrders({
     estatus: filters.estatus || undefined,
     pendientePago: filters.pendientePago === '' ? undefined : filters.pendientePago === 'true',
-    desde: period.desde,
-    hasta: period.hasta,
+    desde: period.desde || undefined,
+    hasta: period.hasta || undefined,
   })
 
   const [patientsMap, setPatientsMap] = useState<Map<number, Patient>>(new Map())
@@ -194,7 +194,7 @@ export function OrdersPage({ onNavigateToHistory }: OrdersPageProps = {}) {
         </div>
       )}
 
-      <PeriodSelector value={period} onChange={(range) => setPeriod(range)} />
+      <PeriodSelector showAll value={period} onChange={(range) => setPeriod(range)} />
 
       <div className="flex flex-wrap gap-4 items-end">
         <div className="space-y-1">

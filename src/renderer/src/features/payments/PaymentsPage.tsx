@@ -35,8 +35,9 @@ export function PaymentsPage() {
   const [cancelId, setCancelId] = useState<number | null>(null)
   const [motivo, setMotivo] = useState('')
 
-  // State for Global Payments View (M1)
-  const [periodRange, setPeriodRange] = useState<PeriodRange>(() => getPeriodRange('dia'))
+  // State for Global Payments View (M1) — default "Todos" so pending and paid
+  // payments from any day are visible without searching.
+  const [periodRange, setPeriodRange] = useState<PeriodRange>(() => getPeriodRange('todos'))
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date())
   const [activeTab, setActiveTab] = useState<FilterTab>('todos')
   const [searchTerm, setSearchTerm] = useState('')
@@ -63,8 +64,8 @@ export function PaymentsPage() {
   // Query global payments
   const globalFilters = useMemo(
     () => ({
-      desde: periodRange.desde,
-      hasta: periodRange.hasta,
+      desde: periodRange.desde || undefined,
+      hasta: periodRange.hasta || undefined,
       soloDeudores: activeTab === 'deudores',
       query: debouncedQuery.trim() || undefined,
     }),
@@ -302,6 +303,7 @@ export function PaymentsPage() {
       <div className="space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <PeriodSelector
+            showAll
             value={periodRange}
             anchorDate={anchorDate}
             onChange={(range, newAnchor) => {

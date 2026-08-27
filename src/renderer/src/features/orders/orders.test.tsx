@@ -427,13 +427,13 @@ describe('OrdersPage workflows and toast feedback (Fix A1, A16)', () => {
       </ToastProvider>,
     )
 
-    // Default period is today (Día): the initial fetch already carries a range.
+    // Default period is "Todos": the initial fetch carries NO date range, so
+    // pending and paid orders from any day are visible without searching.
     await waitFor(() => {
       expect(mockApi.orders.list).toHaveBeenCalled()
     })
-    const todayRange = getPeriodRange('dia')
     expect(mockApi.orders.list).toHaveBeenLastCalledWith(
-      expect.objectContaining({ desde: todayRange.desde, hasta: todayRange.hasta }),
+      expect.objectContaining({ desde: undefined, hasta: undefined }),
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Semana' }))

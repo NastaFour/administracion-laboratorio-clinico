@@ -14,6 +14,8 @@ export interface PeriodSelectorProps {
   value?: PeriodRange
   anchorDate?: Date
   onChange: (range: PeriodRange, anchorDate: Date) => void
+  /** Adds a leading "Todos" segment that disables the date range. */
+  showAll?: boolean
   className?: string
 }
 
@@ -21,6 +23,7 @@ export function PeriodSelector({
   value,
   anchorDate: externalAnchorDate,
   onChange,
+  showAll = false,
   className,
 }: PeriodSelectorProps) {
   const [internalAnchor, setInternalAnchor] = useState<Date>(() => new Date())
@@ -31,6 +34,10 @@ export function PeriodSelector({
   const currentRange = value ?? getPeriodRange(activeType, activeAnchor)
 
   const isCurrentToday = todayLocalDateIso(activeAnchor) === todayLocalDateIso(new Date())
+
+  const segmentTypes: PeriodType[] = showAll
+    ? ['todos', 'dia', 'semana', 'mes', 'anio']
+    : ['dia', 'semana', 'mes', 'anio']
 
   const handleTypeChange = (newType: PeriodType) => {
     setInternalType(newType)
@@ -63,8 +70,9 @@ export function PeriodSelector({
     >
       {/* Segmented Period Type Buttons */}
       <div className="flex items-center rounded-md bg-paper-100 dark:bg-paper-100/50 p-0.5" role="group">
-        {(['dia', 'semana', 'mes', 'anio'] as const).map((tipo) => {
+        {segmentTypes.map((tipo) => {
           const labels: Record<PeriodType, string> = {
+            todos: 'Todos',
             dia: 'Día',
             semana: 'Semana',
             mes: 'Mes',
@@ -90,7 +98,8 @@ export function PeriodSelector({
         })}
       </div>
 
-      {/* Navigator: Prev, Label, Next */}
+      {/* Navigator: Prev, Label, Next (only meaningful for ranged periods) */}
+      {activeType !== 'todos' && (
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -132,6 +141,7 @@ export function PeriodSelector({
           </Button>
         )}
       </div>
+      )}
     </div>
   )
 }

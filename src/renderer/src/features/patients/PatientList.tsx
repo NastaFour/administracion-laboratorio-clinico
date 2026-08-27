@@ -1,6 +1,7 @@
 import { Search, Edit, Trash2, History, ClipboardList } from 'lucide-react'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
+import { cn } from '../../lib/cn'
 import type { Patient } from '@/shared/contracts'
 
 interface PatientListProps {
@@ -52,7 +53,15 @@ export function PatientList({
             </thead>
             <tbody className="divide-y divide-paper-200 dark:divide-surface-border">
               {patients.map((patient) => (
-                <tr key={patient.id} className="hover:bg-paper-50 dark:hover:bg-surface-hover transition-colors">
+                <tr
+                  key={patient.id}
+                  onClick={() => onDossier?.(patient)}
+                  title={onDossier ? 'Abrir ficha integral del paciente' : undefined}
+                  className={cn(
+                    'hover:bg-paper-50 dark:hover:bg-surface-hover transition-colors',
+                    onDossier && 'cursor-pointer',
+                  )}
+                >
                   <td className="px-4 py-3 font-medium text-ink-900 dark:text-ink-950">{patient.cedula}</td>
                   <td className="px-4 py-3 text-ink-700 dark:text-ink-700">
                     {patient.nombre} {patient.apellido}
@@ -64,7 +73,10 @@ export function PatientList({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onDossier(patient)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDossier(patient)
+                          }}
                           aria-label="Ver ficha 360°"
                           title="Ficha integral del paciente"
                           data-testid={`patient-dossier-${patient.id}`}
@@ -75,7 +87,10 @@ export function PatientList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onHistory(patient)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onHistory(patient)
+                        }}
                         aria-label="Ver historial"
                         title="Ver historial"
                       >
@@ -84,7 +99,10 @@ export function PatientList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEdit(patient)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEdit(patient)
+                        }}
                         aria-label="Editar"
                         title="Editar"
                       >
@@ -93,7 +111,10 @@ export function PatientList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDeactivate(patient)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDeactivate(patient)
+                        }}
                         aria-label="Desactivar"
                         title="Desactivar"
                       >

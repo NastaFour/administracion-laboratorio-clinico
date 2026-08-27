@@ -230,8 +230,10 @@ describe('historyCsv helpers', () => {
       pacienteCedula: 'V-10000001',
     }
     const csv = buildHistoryCsv([row], new Map([[1, 'Hemoglobina']]))
-    expect(csv.startsWith('\uFEFFID,Fecha,Paciente,Cédula,Estatus,Exámenes,Total Bs,Pagado Bs,Saldo Bs,Estado de pago')).toBe(true)
-    expect(csv).toContain('"López, Ana"')
+    // Semicolon separators (es-VE Excel) + dd/mm/yyyy dates.
+    expect(csv.startsWith('\uFEFFID;Fecha;Paciente;Cédula;Estatus;Exámenes;Total Bs;Pagado Bs;Saldo Bs;Estado de pago')).toBe(true)
+    expect(csv).toContain('20/08/2026')
+    expect(csv).toContain('López, Ana')
     expect(csv).toContain('Hemoglobina')
     expect(csv).toContain('Crédito')
   })

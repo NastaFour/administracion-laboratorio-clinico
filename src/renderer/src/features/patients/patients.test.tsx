@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { PatientForm } from './PatientForm'
+import { PatientList } from './PatientList'
 import { PatientsPage } from './PatientsPage'
 import { ToastProvider } from '../../components/ui/Toast'
+import type { Patient } from '@/shared/contracts'
 
 const mockSubmit = vi.fn()
 
@@ -236,5 +238,58 @@ describe('PatientsPage workflows and toast feedback (Fix A4, A5)', () => {
       expect(mockApi.patients.deactivate).toHaveBeenCalledWith({ id: 1 })
       expect(screen.getByText('Paciente desactivado.')).toBeInTheDocument()
     })
+  })
+})
+
+describe('PatientList row click opens the 360° dossier (M3 discoverability)', () => {
+  const patient: Patient = {
+    id: 1,
+    cedula: 'V-11111111',
+    nombre: 'Juan',
+    apellido: 'Pérez',
+    sexo: 'M',
+    fecha_nacimiento: '1985-03-15',
+    telefono: null,
+    email: null,
+    direccion: null,
+    activo: true,
+  }
+
+  it('calls onDossier when the row (patient) is clicked', () => {
+    const onDossier = vi.fn()
+    render(
+      <PatientList
+        patients={[patient]}
+        searchQuery=""
+        onSearchChange={vi.fn()}
+        onEdit={vi.fn()}
+        onDeactivate={vi.fn()}
+        onHistory={vi.fn()}
+        onDossier={onDossier}
+      />,
+    )
+
+    fireEvent.click(screen.getByText('Juan Pérez'))
+    expect(onDossier).toHaveBeenCalledWith(patient)
+  })
+
+  it('does not open the dossier when an action button inside the row is clicked', () => {
+    const onDossier = vi.fn()
+    const onEdit = vi.fn()
+    render(
+      <PatientList
+        patients={[patient]}
+        searchQuery=""
+        onSearchChange={vi.fn()}
+        onEdit={onEdit}
+        onDeactivate={vi.fn()}
+        onHistory={vi.fn()}
+        onDossier={onDossier}
+      />,
+    )
+
+    fireEvent.click(screen.getByLabelText('Editar'))
+    expect(onEdit).toHaveBeenCalledWith(patient)
+    expect(onDossier).not.toHaveBeenCalled()
   })
 })

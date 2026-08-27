@@ -15,7 +15,7 @@ export function todayLocalDateIso(date: Date = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
-export type PeriodType = 'dia' | 'semana' | 'mes' | 'anio'
+export type PeriodType = 'todos' | 'dia' | 'semana' | 'mes' | 'anio'
 
 export interface PeriodRange {
   tipo: PeriodType
@@ -45,6 +45,17 @@ export function formatFullDate(d: Date): string {
 export function getPeriodRange(tipo: PeriodType, anchorDate: Date = new Date()): PeriodRange {
   const d = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), anchorDate.getDate())
   const todayIso = todayLocalDateIso(new Date())
+
+  if (tipo === 'todos') {
+    // "Todos" disables the date range: consumers map the empty strings to
+    // `undefined` so the backend returns the complete history.
+    return {
+      tipo,
+      desde: '',
+      hasta: '',
+      label: 'Todos',
+    }
+  }
 
   if (tipo === 'dia') {
     const iso = todayLocalDateIso(d)
@@ -97,7 +108,7 @@ export function shiftAnchorDate(tipo: PeriodType, anchorDate: Date, direction: -
   const month = anchorDate.getMonth()
   const date = anchorDate.getDate()
 
-  if (tipo === 'dia') {
+  if (tipo === 'todos' || tipo === 'dia') {
     return new Date(year, month, date + direction)
   }
   if (tipo === 'semana') {
