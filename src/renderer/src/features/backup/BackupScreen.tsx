@@ -177,7 +177,7 @@ export function BackupScreen() {
           />
           <Button
             variant="danger"
-            onClick={() => void handleRestore(restorePath)}
+            onClick={() => setConfirmRestorePath(restorePath)}
             disabled={!restorePath.trim()}
             data-testid="restore-button"
           >

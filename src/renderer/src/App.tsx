@@ -168,7 +168,7 @@ function AppContent() {
   const isAdmin = session.rol === 'admin'
 
   return (
-    <div className="min-h-screen bg-paper-50 dark:bg-paper-50 text-ink-950 dark:text-ink-950 flex transition-colors duration-150">
+    <div className="min-h-screen bg-paper-50 text-ink-950 flex transition-colors duration-150">
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-surface-card border-r border-paper-200 dark:border-surface-border flex flex-col h-screen select-none transition-colors duration-150">
         {/* Brand header */}
