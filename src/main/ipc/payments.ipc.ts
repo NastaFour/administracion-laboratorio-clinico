@@ -1,11 +1,27 @@
 import type Database from 'better-sqlite3'
-import { paymentsChannels, ROLES, type BcvRate, type Balance, type CancelPaymentRequest, type ListAllPaymentsRequest, type Payment, type PaymentListItem, type RecordPaymentRequest, type Session } from '@/shared/contracts'
+import {
+  paymentsChannels,
+  ROLES,
+  type BcvRate,
+  type Balance,
+  type CancelPaymentRequest,
+  type CierreHistoryItem,
+  type CierreMetrics,
+  type CierreMetricsRequest,
+  type ListAllPaymentsRequest,
+  type ListCierresRequest,
+  type Payment,
+  type PaymentListItem,
+  type RecordPaymentRequest,
+  type Session,
+} from '@/shared/contracts'
 import { ERROR_CODES } from '@/shared/contracts'
 import { handle } from './register'
 import { writeAudit } from '../services/audit'
 import { resolveBsAmount } from '../services/payments'
-import { runCierreService, cierrePrintService } from '../services/cierre'
+import { runCierreService, cierrePrintService, getCierreMetrics } from '../services/cierre'
 import { cancelPayment, getBalance, getPayment, listAllPayments, listPaymentsByOrder, recordPayment } from '../repositories/payments'
+import { listCierres } from '../repositories/cierre'
 import { getBcvRate, setBcvRate } from '../repositories/config'
 
 const PAYMENT_ROLES = [ROLES.ADMIN, ROLES.RECEPCION]
@@ -113,6 +129,20 @@ export function handlePrintCierre(db: Database.Database, req: { fecha: string })
   return cierrePrintService(db, req.fecha)
 }
 
+export function handleListCierres(
+  db: Database.Database,
+  req: ListCierresRequest,
+): CierreHistoryItem[] {
+  return listCierres(db, req)
+}
+
+export function handleGetCierreMetrics(
+  db: Database.Database,
+  req: CierreMetricsRequest,
+): CierreMetrics {
+  return getCierreMetrics(db, req.fechaReferencia)
+}
+
 export function registerPaymentsHandlers(db: Database.Database): void {
   handle(db, 'payments:record', PAYMENT_ROLES, paymentsChannels['payments:record'].request, handleRecordPayment)
   handle(db, 'payments:cancel', PAYMENT_ROLES, paymentsChannels['payments:cancel'].request, handleCancelPayment)
@@ -123,4 +153,6 @@ export function registerPaymentsHandlers(db: Database.Database): void {
   handle(db, 'config:setBcvRate', ADMIN_ROLES, paymentsChannels['config:setBcvRate'].request, handleSetBcvRate)
   handle(db, 'cierre:run', PAYMENT_ROLES, paymentsChannels['cierre:run'].request, handleRunCierre)
   handle(db, 'cierre:print', PAYMENT_ROLES, paymentsChannels['cierre:print'].request, handlePrintCierre)
+  handle(db, 'cierre:list', PAYMENT_ROLES, paymentsChannels['cierre:list'].request, handleListCierres)
+  handle(db, 'cierre:metrics', PAYMENT_ROLES, paymentsChannels['cierre:metrics'].request, handleGetCierreMetrics)
 }

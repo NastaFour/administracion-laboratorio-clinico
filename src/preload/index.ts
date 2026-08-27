@@ -93,6 +93,8 @@ const api: LabCoreAPI = {
   cierre: makeDomain({
     'cierre:run': paymentsChannels['cierre:run'],
     'cierre:print': paymentsChannels['cierre:print'],
+    'cierre:list': paymentsChannels['cierre:list'],
+    'cierre:metrics': paymentsChannels['cierre:metrics'],
   }) as LabCoreAPI['cierre'],
   config: makeDomain({
     ...configChannels,

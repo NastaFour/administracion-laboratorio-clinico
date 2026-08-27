@@ -3,6 +3,8 @@ import { idSchema, isoDateOnlySchema, positiveMoneySchema } from './primitives'
 import { PAYMENT_METHOD } from './constants'
 import { envelopeSchema } from './errors'
 
+export const moneySchema = positiveMoneySchema
+
 export const paymentMethodSchema = z.enum([
   PAYMENT_METHOD.PAGO_MOVIL,
   PAYMENT_METHOD.TRANSFERENCIA,
@@ -59,23 +61,61 @@ export const listAllPaymentsRequestSchema = z.object({
 export type ListAllPaymentsRequest = z.infer<typeof listAllPaymentsRequestSchema>
 
 export const paymentListItemSchema = z.object({
-  id: z.number().int(),
-  ordenId: z.number().int(),
-  pacienteId: z.number().int(),
+  id: idSchema,
+  ordenId: idSchema,
+  pacienteId: idSchema,
   pacienteNombre: z.string(),
   pacienteCedula: z.string(),
   metodo: paymentMethodSchema,
-  monto_bs: z.number(),
-  monto_usd: z.number(),
-  tasa_bcv: z.number(),
-  fecha: z.string(),
+  monto_bs: moneySchema,
+  monto_usd: moneySchema,
+  tasa_bcv: moneySchema,
+  fecha: isoDateOnlySchema,
   cajero: z.string(),
-  totalOrden: z.number(),
-  saldoActualOrden: z.number(),
+  totalOrden: moneySchema,
+  saldoActualOrden: moneySchema,
   anulado: z.boolean(),
 })
-
 export type PaymentListItem = z.infer<typeof paymentListItemSchema>
+
+export const listCierresRequestSchema = z.object({
+  desde: isoDateOnlySchema.optional(),
+  hasta: isoDateOnlySchema.optional(),
+})
+export type ListCierresRequest = z.infer<typeof listCierresRequestSchema>
+
+export const cierreHistoryItemSchema = z.object({
+  id: idSchema,
+  fecha: isoDateOnlySchema,
+  total_bs: moneySchema,
+  total_usd: moneySchema,
+  tasa_bcv: z.number().nullable(),
+  cerrado_por: z.string(),
+  cerrado_en: z.string(),
+  detalle_por_metodo: z.record(
+    z.string(),
+    z.object({ bs: moneySchema, usd: moneySchema }),
+  ),
+})
+export type CierreHistoryItem = z.infer<typeof cierreHistoryItemSchema>
+
+export const cierrePeriodTotalSchema = z.object({
+  bs: moneySchema,
+  usd: moneySchema,
+})
+
+export const cierreMetricsSchema = z.object({
+  dia: cierrePeriodTotalSchema,
+  semana: cierrePeriodTotalSchema,
+  mes: cierrePeriodTotalSchema,
+  anio: cierrePeriodTotalSchema,
+})
+export type CierreMetrics = z.infer<typeof cierreMetricsSchema>
+
+export const cierreMetricsRequestSchema = z.object({
+  fechaReferencia: isoDateOnlySchema.optional(),
+})
+export type CierreMetricsRequest = z.infer<typeof cierreMetricsRequestSchema>
 
 export const balanceSchema = z.object({
   orden_id: idSchema,
@@ -137,6 +177,14 @@ export const paymentsChannels = {
   'cierre:print': {
     request: z.object({ fecha: isoDateOnlySchema }),
     response: envelopeSchema(z.string()),
+  },
+  'cierre:list': {
+    request: listCierresRequestSchema,
+    response: envelopeSchema(z.array(cierreHistoryItemSchema)),
+  },
+  'cierre:metrics': {
+    request: cierreMetricsRequestSchema,
+    response: envelopeSchema(cierreMetricsSchema),
   },
   'config:getBcvRate': {
     request: z.void(),

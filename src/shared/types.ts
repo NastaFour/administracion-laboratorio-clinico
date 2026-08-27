@@ -96,6 +96,8 @@ export interface LabCoreAPI {
   cierre: {
     run: (req: RequestOf<IpcChannels['cierre:run']>) => Promise<ResponseOf<IpcChannels['cierre:run']>>
     print: (req: RequestOf<IpcChannels['cierre:print']>) => Promise<ResponseOf<IpcChannels['cierre:print']>>
+    list: (req: RequestOf<IpcChannels['cierre:list']>) => Promise<ResponseOf<IpcChannels['cierre:list']>>
+    metrics: (req: RequestOf<IpcChannels['cierre:metrics']>) => Promise<ResponseOf<IpcChannels['cierre:metrics']>>
   }
   config: {
     getBcvRate: () => Promise<ResponseOf<IpcChannels['config:getBcvRate']>>

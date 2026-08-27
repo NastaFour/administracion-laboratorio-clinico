@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { Cierre, PaymentMethod, Session } from '@/shared/contracts'
+import type { Cierre, CierreMetrics, PaymentMethod, Session } from '@/shared/contracts'
 import { writeAudit } from './audit'
 import { getPaymentMethodTotals } from '../repositories/payments'
 import { getBcvRate } from '../repositories/config'
@@ -175,4 +175,75 @@ export function cierrePrintService(db: Database.Database, fecha: string): string
     detalle_por_metodo: consolidation.detalle_por_metodo,
   }
   return buildCierrePrintHtml(cierre)
+}
+
+function getLocalRanges(refDateStr?: string) {
+  let refDate: Date
+  if (refDateStr && /^\d{4}-\d{2}-\d{2}$/.test(refDateStr)) {
+    const [y, m, d] = refDateStr.split('-').map(Number)
+    refDate = new Date(y, m - 1, d)
+  } else {
+    refDate = new Date()
+  }
+
+  const y = refDate.getFullYear()
+  const m = refDate.getMonth()
+  const d = refDate.getDate()
+
+  const toLocalIso = (dt: Date) => {
+    const year = dt.getFullYear()
+    const month = String(dt.getMonth() + 1).padStart(2, '0')
+    const day = String(dt.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const todayIso = toLocalIso(refDate)
+
+  // dia
+  const diaRange = { desde: todayIso, hasta: todayIso }
+
+  // semana (Monday to Sunday)
+  const dayOfWeek = refDate.getDay()
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  const monday = new Date(y, m, d + diffToMonday)
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+  const semanaRange = { desde: toLocalIso(monday), hasta: toLocalIso(sunday) }
+
+  // mes
+  const firstDayMonth = new Date(y, m, 1)
+  const lastDayMonth = new Date(y, m + 1, 0)
+  const mesRange = { desde: toLocalIso(firstDayMonth), hasta: toLocalIso(lastDayMonth) }
+
+  // anio
+  const firstDayYear = new Date(y, 0, 1)
+  const lastDayYear = new Date(y, 11, 31)
+  const anioRange = { desde: toLocalIso(firstDayYear), hasta: toLocalIso(lastDayYear) }
+
+  return { diaRange, semanaRange, mesRange, anioRange }
+}
+
+export function getCierreMetrics(db: Database.Database, fechaReferencia?: string): CierreMetrics {
+  const { diaRange, semanaRange, mesRange, anioRange } = getLocalRanges(fechaReferencia)
+
+  const queryTotal = (desde: string, hasta: string) => {
+    const row = db.prepare(`
+      SELECT
+        COALESCE(SUM(monto_bs), 0) AS total_bs,
+        COALESCE(SUM(monto_usd), 0) AS total_usd
+      FROM pagos
+      WHERE anulado = 0 AND fecha BETWEEN ? AND ?
+    `).get(desde, hasta) as { total_bs: number; total_usd: number }
+
+    return {
+      bs: round2(row.total_bs),
+      usd: round2(row.total_usd),
+    }
+  }
+
+  return {
+    dia: queryTotal(diaRange.desde, diaRange.hasta),
+    semana: queryTotal(semanaRange.desde, semanaRange.hasta),
+    mes: queryTotal(mesRange.desde, mesRange.hasta),
+    anio: queryTotal(anioRange.desde, anioRange.hasta),
+  }
 }

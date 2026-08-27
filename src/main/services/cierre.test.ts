@@ -2,7 +2,8 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { createExam, createOrder as helperCreateOrder, createPatient, createTestDb, createUser } from '../repositories/test-helpers'
 import { recordPayment } from '../repositories/payments'
 import { setBcvRate } from '../repositories/config'
-import { cierrePrintService, consolidateCierre, runCierreService } from './cierre'
+import { listCierres } from '../repositories/cierre'
+import { cierrePrintService, consolidateCierre, getCierreMetrics, runCierreService } from './cierre'
 import { PAYMENT_METHOD, type Session } from '@/shared/contracts'
 
 const DATE = '2026-08-18'
@@ -168,5 +169,69 @@ describe('cierre service', () => {
     expect(cierre.total_bs).toBe(0)
     expect(cierre.tasa_bcv).toBe(0)
     expect(cierre.tasa_actualizado_en).toBeNull()
+  })
+
+  it('calculates live accumulated metrics for dia, semana, mes, and anio', () => {
+    setBcvRate(testDb.db, 950, userId)
+    seedPayments() // On 2026-08-18 (Tuesday of week Aug 17-23, month Aug, year 2026): 12500 Bs, 10 USD
+
+    // Record another payment on a different day of the same week (2026-08-19 Wednesday)
+    recordPayment(testDb.db, {
+      orden_id: ordenId,
+      cuenta_id: null,
+      metodo: PAYMENT_METHOD.EFECTIVO,
+      monto_bs: 3000,
+      monto_usd: 0,
+      fecha: '2026-08-19',
+      referencia: null,
+      usuario_id: userId,
+    })
+
+    // Record payment in another month of the same year (2026-07-15)
+    recordPayment(testDb.db, {
+      orden_id: ordenId,
+      cuenta_id: null,
+      metodo: PAYMENT_METHOD.EFECTIVO,
+      monto_bs: 5000,
+      monto_usd: 5,
+      fecha: '2026-07-15',
+      referencia: null,
+      usuario_id: userId,
+    })
+
+    const metrics = getCierreMetrics(testDb.db, '2026-08-18')
+
+    // dia (only 2026-08-18)
+    expect(metrics.dia.bs).toBe(12500)
+    expect(metrics.dia.usd).toBe(10)
+
+    // semana (2026-08-17 to 2026-08-23: includes 18th and 19th)
+    expect(metrics.semana.bs).toBe(15500)
+    expect(metrics.semana.usd).toBe(10)
+
+    // mes (August 2026: includes 18th and 19th)
+    expect(metrics.mes.bs).toBe(15500)
+    expect(metrics.mes.usd).toBe(10)
+
+    // anio (2026: includes Aug 18th, Aug 19th, and July 15th)
+    expect(metrics.anio.bs).toBe(20500)
+    expect(metrics.anio.usd).toBe(15)
+  })
+
+  it('lists persisted cierres with user details ordered DESC', async () => {
+    seedPayments()
+    await runCierreService(testDb.db, '2026-08-17', makeSession(userId))
+    await runCierreService(testDb.db, '2026-08-18', makeSession(userId))
+
+    const list = listCierres(testDb.db)
+    expect(list).toHaveLength(2)
+    expect(list[0].fecha).toBe('2026-08-18')
+    expect(list[1].fecha).toBe('2026-08-17')
+    expect(list[0].cerrado_por).toBeDefined()
+    expect(list[0].detalle_por_metodo).toBeDefined()
+
+    const filtered = listCierres(testDb.db, { desde: '2026-08-18' })
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].fecha).toBe('2026-08-18')
   })
 })
