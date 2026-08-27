@@ -102,13 +102,44 @@ describe('BackupScreen (WU14)', () => {
     expect(screen.getByText('Respaldo creado correctamente.')).toBeInTheDocument()
   })
 
-  it('restores from the typed path', async () => {
+  it('requires confirmation before restoring from typed path and can be cancelled', async () => {
     render(<BackupScreen />)
     fireEvent.change(screen.getByTestId('restore-path-input'), { target: { value: 'D:\\usb\\lab.db' } })
     fireEvent.click(screen.getByTestId('restore-button'))
 
+    // Dialog opens with warning
+    expect(screen.getByText('Confirmar restauración de respaldo')).toBeInTheDocument()
+    expect(screen.getByText(/Esta acción reemplazará la base de datos actual/i)).toBeInTheDocument()
+
+    // Cancel does not call restore
+    fireEvent.click(screen.getByText('Cancelar'))
+    expect(mockApi.backup.restore).not.toHaveBeenCalled()
+    expect(screen.queryByText('Confirmar restauración de respaldo')).not.toBeInTheDocument()
+
+    // Clicking restore again and confirming
+    fireEvent.click(screen.getByTestId('restore-button'))
+    expect(screen.getByText('Confirmar restauración de respaldo')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Restaurar y reiniciar'))
+
     await waitFor(() => {
       expect(mockApi.backup.restore).toHaveBeenCalledWith({ filePath: 'D:\\usb\\lab.db' })
+    })
+  })
+
+  it('requires confirmation before restoring from backup list', async () => {
+    render(<BackupScreen />)
+    await waitFor(() => expect(screen.getByTestId('backup-list')).toBeInTheDocument())
+
+    const restoreButtons = screen.getAllByRole('button', { name: 'Restaurar' })
+    // Click the restore button in the list
+    fireEvent.click(restoreButtons[0])
+
+    expect(screen.getByText('Confirmar restauración de respaldo')).toBeInTheDocument()
+    expect(screen.getByText(/¿Está seguro de restaurar el respaldo desde/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('Restaurar y reiniciar'))
+    await waitFor(() => {
+      expect(mockApi.backup.restore).toHaveBeenCalledWith({ filePath: 'C:\\respaldos\\labcore.db' })
     })
   })
 

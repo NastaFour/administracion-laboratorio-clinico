@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { PaymentRecordForm } from './Record'
+import { PaymentsPage } from './PaymentsPage'
+import { ToastProvider } from '../../components/ui/Toast'
 
 const mockSubmit = vi.fn()
 
@@ -79,6 +81,106 @@ describe('PaymentRecordForm validation', () => {
           monto_usd: 0,
         }),
       )
+    })
+  })
+})
+
+describe('PaymentsPage workflows and toast feedback (Fix A6, A7)', () => {
+  it('validates order input and shows inline error for invalid values', () => {
+    render(
+      <ToastProvider>
+        <PaymentsPage />
+      </ToastProvider>,
+    )
+
+    fireEvent.change(screen.getByLabelText('Orden #'), { target: { value: '-5' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cargar' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Ingrese un número de orden válido.')
+  })
+
+  it('loads valid order and registers payment with success toast', async () => {
+    render(
+      <ToastProvider>
+        <PaymentsPage />
+      </ToastProvider>,
+    )
+
+    fireEvent.change(screen.getByLabelText('Orden #'), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cargar' }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('payment-list')).toBeInTheDocument()
+    })
+
+    // Open record payment modal
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar pago' }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Monto Bs')).toBeInTheDocument()
+    })
+
+    fireEvent.change(screen.getByLabelText('Monto Bs'), { target: { value: '500' } })
+    fireEvent.click(screen.getByTestId('payment-submit'))
+
+    await waitFor(() => {
+      expect(mockApi.payments.record).toHaveBeenCalledWith(
+        expect.objectContaining({ orden_id: 1, monto_bs: 500 }),
+      )
+      expect(screen.getByText('Pago registrado exitosamente.')).toBeInTheDocument()
+    })
+  })
+
+  it('cancels payment and shows toast notification', async () => {
+    mockApi.payments.listForOrder.mockResolvedValueOnce({
+      ok: true,
+      data: [
+        {
+          id: 42,
+          orden_id: 1,
+          metodo: 'efectivo',
+          monto_bs: 500,
+          monto_usd: 0,
+          referencia: null,
+          creado_en: '2026-08-27T10:00:00Z',
+          fecha: '2026-08-27',
+          anulado: false,
+          motivo_anulacion: null,
+        },
+      ],
+    })
+    mockApi.payments.cancel.mockResolvedValueOnce({ ok: true, data: { id: 42, anulado: true } })
+
+    render(
+      <ToastProvider>
+        <PaymentsPage />
+      </ToastProvider>,
+    )
+
+    fireEvent.change(screen.getByLabelText('Orden #'), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cargar' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Anular' })).toBeInTheDocument()
+    })
+
+    // Click cancel button on payment row
+    fireEvent.click(screen.getByRole('button', { name: 'Anular' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Registre el motivo de la anulación del pago.')).toBeInTheDocument()
+    })
+
+    fireEvent.change(screen.getByLabelText('Motivo'), {
+      target: { value: 'Doble cargo en punto' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Anular pago' }))
+
+    await waitFor(() => {
+      expect(mockApi.payments.cancel).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 42, motivo: 'Doble cargo en punto' }),
+      )
+      expect(screen.getByText('Pago anulado exitosamente.')).toBeInTheDocument()
     })
   })
 })
