@@ -364,6 +364,11 @@ export interface PdfDeps {
 
 export interface PrintOptions {
   copia?: boolean
+  /**
+   * Report layout override (dual-format system). When omitted the configured
+   * `reporte_formato` default applies via buildReportData.
+   */
+  formato?: ReportFormat
 }
 
 /**
@@ -456,7 +461,7 @@ export async function previewReport(
   deps: PdfDeps = {},
   options: PrintOptions = {},
 ): Promise<void> {
-  const data = buildReportData(db, ordenId, { copia: options.copia })
+  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato })
   const win = await resolvePreviewWindow(deps, resolveReportTemplatePath(), encodeReportPayload(data))
   win.show()
 }
@@ -473,7 +478,7 @@ export async function printReportToPdf(
   deps: PdfDeps = {},
   options: PrintOptions = {},
 ): Promise<Buffer> {
-  const data = buildReportData(db, ordenId, { copia: options.copia })
+  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato })
   const win = await resolvePrintWindow(deps, resolveReportTemplatePath(), encodeReportPayload(data))
   try {
     await win.webContents.executeJavaScript(REPORT_FONT_HANDSHAKE)
@@ -508,7 +513,7 @@ export async function printReportToPrinter(
   deps: PdfDeps = {},
   options: PrintOptions = {},
 ): Promise<void> {
-  const data = buildReportData(db, ordenId, { copia: options.copia })
+  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato })
   const win = await resolvePrintWindow(deps, resolveReportTemplatePath(), encodeReportPayload(data))
   try {
     await win.webContents.executeJavaScript(REPORT_FONT_HANDSHAKE)

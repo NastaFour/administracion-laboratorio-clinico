@@ -1,12 +1,16 @@
 import { z } from 'zod'
 import { idSchema } from './primitives'
 import { envelopeSchema } from './errors'
+import { reportFormatSchema } from './config'
 
 export const reportActionSchema = z.enum(['preview', 'print', 'savePdf'])
 
 export const reportRequestSchema = z.object({
   ordenId: idSchema,
   copia: z.boolean().default(false),
+  // Dual-format system: optional per-request layout override. When omitted the
+  // configured `reporte_formato` default applies (additive field, SPEC §3.A).
+  formato: reportFormatSchema.optional(),
 })
 
 export type ReportRequest = z.infer<typeof reportRequestSchema>

@@ -1,7 +1,7 @@
 import { BrowserWindow, dialog } from 'electron'
 import fs from 'node:fs'
 import type Database from 'better-sqlite3'
-import { reportsChannels, ROLES, type Session } from '@/shared/contracts'
+import { reportsChannels, ROLES, type ReportFormat, type Session } from '@/shared/contracts'
 import { handle } from './register'
 import { previewReport, printReportToPdf, printReportToPrinter, type PdfDeps } from '../services/pdf'
 
@@ -12,6 +12,8 @@ export interface ReportRequestInput {
   ordenId: number
   copia: boolean
   filePath?: string
+  /** Optional per-request layout override; omitted = configured default. */
+  formato?: ReportFormat
 }
 
 /**
@@ -25,7 +27,7 @@ export async function handlePreviewReport(
   _session: Session,
   deps?: PdfDeps,
 ): Promise<string> {
-  await previewReport(db, req.ordenId, deps, { copia: req.copia })
+  await previewReport(db, req.ordenId, deps, { copia: req.copia, formato: req.formato })
   return 'ok'
 }
 
@@ -40,7 +42,7 @@ export async function handlePrintReport(
   session: Session,
   deps?: PdfDeps,
 ): Promise<void> {
-  await printReportToPrinter(db, req.ordenId, session, deps, { copia: req.copia })
+  await printReportToPrinter(db, req.ordenId, session, deps, { copia: req.copia, formato: req.formato })
 }
 
 /**
@@ -70,7 +72,7 @@ export async function handleSaveReportPdf(
     }
     filePath = result.filePath
   }
-  const pdf = await printReportToPdf(db, req.ordenId, session, deps, { copia: req.copia })
+  const pdf = await printReportToPdf(db, req.ordenId, session, deps, { copia: req.copia, formato: req.formato })
   await fs.promises.writeFile(filePath, pdf)
 }
 
