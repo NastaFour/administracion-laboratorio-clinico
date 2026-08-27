@@ -14,7 +14,7 @@
 import { BrowserWindow } from 'electron'
 import path from 'node:path'
 import type Database from 'better-sqlite3'
-import type { BioanalistaConfig, Flag, Session } from '@/shared/contracts'
+import type { BioanalistaConfig, Flag, ReportFormat, Session } from '@/shared/contracts'
 import { ERROR_CODES, RESULT_STATUS } from '@/shared/contracts'
 import { computeExactAge, selectBandForExactAge, type ExactAge } from './referenceRanges'
 import { writeAudit } from './audit'
@@ -23,7 +23,7 @@ import { getPatient } from '../repositories/patients'
 import { getMedico } from '../repositories/medicos'
 import { getExam, getParam, listParams, listRanges } from '../repositories/catalog'
 import { listResultsByOrderExam } from '../repositories/results'
-import { getBioanalistaConfig, getLabConfig, getPrintConfig } from '../repositories/config'
+import { getBioanalistaConfig, getLabConfig, getPrintConfig, getReportFormat } from '../repositories/config'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,6 +69,19 @@ export interface ReportExam {
   resultados: ReportResultRow[]
 }
 
+/**
+ * Structured antibiogram payload for the specialized template's 3-column
+ * table (SPEC-VISUAL-PDF-TEMPLATES §B). `buildReportData` NEVER fabricates
+ * this data — there is no v1 capture source for S/R/I values — so the field
+ * stays null and the specialized template falls back to the isolation/
+ * microscopy narrative from `orden.observaciones`. A future capture feature
+ * can populate it without changing the template contract.
+ */
+export interface ReportAntibiogram {
+  cepas: string[]
+  filas: Array<{ antibiotico: string; valores: Array<'S' | 'R' | 'I' | null> }>
+}
+
 export interface ReportData {
   header: ReportHeader
   paciente: ReportPatient
@@ -82,11 +95,24 @@ export interface ReportData {
   bioanalista: BioanalistaConfig
   copia: boolean
   generadoEn: string
+  /** Selected report layout (dual-format system): 'generico' | 'especializado'. */
+  formato: ReportFormat
+  /** True when ANY exam in the order is microbiology (Bacteriología/Urocultivo category or CULTIVO/BK naming). */
+  isMicrobiology: boolean
+  /** True when ANY exam name matches BK/BACILO (Baciloscopia — Zielh-Neelsen specialized variant). */
+  isBK: boolean
+  /** Structured antibiogram for the specialized table — null unless a future capture source provides it. */
+  antibiograma: ReportAntibiogram | null
 }
 
 export interface BuildReportOptions {
   refDate?: Date | string
   copia?: boolean
+  /**
+   * Report layout override. When omitted the configured `reporte_formato`
+   * default applies (config:reporte_formato, 'generico' fallback).
+   */
+  formato?: ReportFormat
 }
 
 // ---------------------------------------------------------------------------
@@ -156,6 +182,35 @@ export function encodeReportPayload(data: ReportData): string {
 }
 
 // ---------------------------------------------------------------------------
+// Microbiology detection (dual-format system, SPEC §3.2)
+// ---------------------------------------------------------------------------
+
+const MICROBIOLOGY_CATEGORIES = new Set(['bacteriologia', 'urocultivo'])
+const MICROBIOLOGY_NAME_RE = /UROCULTIVO|CULTIVO|COPROCULTIVO|BK\b/i
+const BK_NAME_RE = /BK|BACILO/i
+
+/** Lowercase + strip diacritics so 'Bacteriología' matches 'bacteriologia'. */
+function normalizeCategory(value: string): string {
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+/**
+ * An exam is microbiology when its category is Bacteriología/Urocultivo
+ * (accent-insensitive) or its name matches /UROCULTIVO|CULTIVO|COPROCULTIVO|BK\b/i.
+ */
+export function isMicrobiologyExam(exam: { categoria: string; nombre: string }): boolean {
+  if (MICROBIOLOGY_CATEGORIES.has(normalizeCategory(exam.categoria))) {
+    return true
+  }
+  return MICROBIOLOGY_NAME_RE.test(exam.nombre)
+}
+
+/** A Baciloscopia exam matches /BK|BACILO/i on its name. */
+export function isBKExam(nombre: string): boolean {
+  return BK_NAME_RE.test(nombre)
+}
+
+// ---------------------------------------------------------------------------
 // Report data builder (WU10a)
 // ---------------------------------------------------------------------------
 
@@ -164,6 +219,13 @@ export function encodeReportPayload(data: ReportData): string {
  * included (D8); exams without any validated result are dropped entirely. The
  * reference band is recomputed at report time from the patient's sex and exact
  * age (A10), while the flag stored at capture time is preserved.
+ *
+ * Dual-format system (SPEC §3.2): the layout (`formato`) comes from the
+ * explicit option or the configured `reporte_formato`; `isMicrobiology` /
+ * `isBK` flag whether the specialized template must render microbiology
+ * blocks. `orden.observaciones` and per-result `comentario` carry the
+ * isolation/microscopy narrative (v1 data source) — no antibiogram data is
+ * invented here.
  */
 export function buildReportData(
   db: Database.Database,
@@ -263,6 +325,10 @@ export function buildReportData(
     bioanalista,
     copia: options.copia ?? false,
     generadoEn: new Date().toISOString(),
+    formato: options.formato ?? getReportFormat(db),
+    isMicrobiology: examenes.some(isMicrobiologyExam),
+    isBK: examenes.some((exam) => isBKExam(exam.nombre)),
+    antibiograma: null,
   }
 }
 
