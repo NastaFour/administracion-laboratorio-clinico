@@ -351,7 +351,7 @@ function AppContent() {
           {activeTab === 'dashboard' && <DashboardPage />}
           {activeTab === 'patients' && <PatientsPage />}
           {activeTab === 'catalog' && <CatalogPage />}
-          {activeTab === 'orders' && <OrdersPage />}
+          {activeTab === 'orders' && <OrdersPage onNavigateToHistory={() => setActiveTab('history')} />}
           {activeTab === 'medicos' && <MedicosPage />}
           {activeTab === 'sampling' && <SamplingPage />}
           {activeTab === 'results' && <CapturePage />}

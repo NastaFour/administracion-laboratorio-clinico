@@ -118,7 +118,7 @@ export function CatalogPage() {
         searchQuery={searchQuery}
         selectedExam={selectedExam}
         onSearchChange={setSearchQuery}
-        onSelect={setSelectedExam}
+        onSelect={(exam) => setSelectedExam((prev) => (prev?.id === exam.id ? null : exam))}
         onEdit={openEditExam}
         onDeactivate={setConfirmDeactivateExam}
         canManage={canManage}

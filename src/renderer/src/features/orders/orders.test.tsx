@@ -295,6 +295,25 @@ describe('OrderList actions and role guards (Fix A1, A16, B1)', () => {
     expect(screen.getByText('Juan Pérez')).toBeInTheDocument()
     expect(screen.getByText(/V-11111111/)).toBeInTheDocument()
   })
+
+  it('shows empty state with Ir a Historial button and triggers onNavigateToHistory', () => {
+    const handleNavigate = vi.fn()
+    render(
+      <OrderList
+        orders={[]}
+        canAuthorizeCredit={false}
+        onEdit={vi.fn()}
+        onAuthorizeCredit={vi.fn()}
+        onNavigateToHistory={handleNavigate}
+      />,
+    )
+
+    expect(screen.getByText('No hay órdenes registradas.')).toBeInTheDocument()
+    const historyBtn = screen.getByRole('button', { name: /Ir a Historial/i })
+    expect(historyBtn).toBeInTheDocument()
+    fireEvent.click(historyBtn)
+    expect(handleNavigate).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('OrdersPage workflows and toast feedback (Fix A1, A16)', () => {

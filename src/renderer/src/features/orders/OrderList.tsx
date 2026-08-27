@@ -1,6 +1,7 @@
-import { Edit2, CreditCard, CheckCheck, Ban } from 'lucide-react'
+import { Edit2, CreditCard, CheckCheck, Ban, History } from 'lucide-react'
 import { cn } from '../../lib/cn'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { Button } from '../../components/ui/Button'
 import type { OrderWithExams, Patient } from '@/shared/contracts'
 import { ORDER_STATUS } from '@/shared/contracts'
 
@@ -14,6 +15,7 @@ interface OrderListProps {
   onAuthorizeCredit: (order: OrderWithExams) => void
   onDeliver?: (order: OrderWithExams) => void
   onVoid?: (order: OrderWithExams) => void
+  onNavigateToHistory?: () => void
 }
 
 function formatBs(amount: number): string {
@@ -36,11 +38,23 @@ export function OrderList({
   onAuthorizeCredit,
   onDeliver,
   onVoid,
+  onNavigateToHistory,
 }: OrderListProps) {
   if (orders.length === 0) {
     return (
-      <div className="rounded-lg border border-paper-200 dark:border-surface-border bg-paper-50 dark:bg-surface-card p-8 text-center">
+      <div className="rounded-lg border border-paper-200 dark:border-surface-border bg-paper-50 dark:bg-surface-card p-8 text-center space-y-3">
         <p className="text-ink-500 dark:text-ink-600">No hay órdenes registradas.</p>
+        {onNavigateToHistory && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onNavigateToHistory}
+            className="gap-2"
+          >
+            <History size={15} />
+            Ir a Historial
+          </Button>
+        )}
       </div>
     )
   }

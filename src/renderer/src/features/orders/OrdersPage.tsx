@@ -14,7 +14,11 @@ import { ORDER_STATUS } from '@/shared/contracts'
 const CREDIT_ROLES = ['admin', 'bioanalista']
 const DELIVER_ROLES = ['admin', 'recepcion']
 
-export function OrdersPage() {
+interface OrdersPageProps {
+  onNavigateToHistory?: () => void
+}
+
+export function OrdersPage({ onNavigateToHistory }: OrdersPageProps = {}) {
   const toast = useToast()
   const { session } = useSessionStore()
   const canAuthorizeCredit = session ? CREDIT_ROLES.includes(session.rol) : false
@@ -236,6 +240,7 @@ export function OrdersPage() {
         onAuthorizeCredit={openCredit}
         onDeliver={handleDeliver}
         onVoid={openVoid}
+        onNavigateToHistory={onNavigateToHistory}
       />
 
       <Modal
