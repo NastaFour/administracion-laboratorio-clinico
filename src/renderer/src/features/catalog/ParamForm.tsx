@@ -11,7 +11,7 @@ interface ParamFormProps {
   canManage: boolean
   onSaved: () => void
   onCancel: () => void
-  onSubmit: (input: ParameterInput & { id?: number }) => Promise<{ ok: boolean; error?: string }>
+  onSubmit: (input: ParameterInput & { id?: number }) => Promise<{ ok: boolean; error?: string; data?: Parameter }>
 }
 
 const emptyForm: ParameterInput = {
@@ -44,6 +44,8 @@ export function ParamForm({ param, examenId, canManage, onSaved, onCancel, onSub
   const [errors, setErrors] = useState<Partial<Record<keyof ParameterInput, string>>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // After creating a new param, store its id to show the RangeEditor inline
+  const [createdParamId, setCreatedParamId] = useState<number | null>(null)
 
   useEffect(() => {
     formRef.current = form
@@ -91,7 +93,12 @@ export function ParamForm({ param, examenId, canManage, onSaved, onCancel, onSub
     setSubmitting(false)
 
     if (result.ok) {
-      onSaved()
+      if (!param && result.data?.id) {
+        // New parameter created: show range editor inline instead of closing
+        setCreatedParamId(result.data.id)
+      } else {
+        onSaved()
+      }
     } else {
       setSubmitError(result.error ?? 'No se pudo guardar el parámetro.')
     }
@@ -103,6 +110,23 @@ export function ParamForm({ param, examenId, canManage, onSaved, onCancel, onSub
       formRef.current = next
       return next
     })
+  }
+
+  // After new param creation, show range editor with a Done button
+  if (createdParamId !== null) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-success-700 bg-success-50 rounded-md px-3 py-2 font-medium">
+          ✓ Parámetro creado. Ahora puede agregar los valores de referencia (opcional).
+        </p>
+        <RangeEditor parametroId={createdParamId} canManage={canManage} />
+        <div className="flex justify-end gap-3 pt-2">
+          <Button type="button" onClick={onSaved}>
+            Listo
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (

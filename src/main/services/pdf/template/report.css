@@ -394,7 +394,7 @@ body[data-formato='especializado'] .solo-generico {
 /* ESPECIALIZADO header: balanced mark + institutional pill box (SPEC §2.B). */
 .encabezado-esp {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: 4mm;
   margin-bottom: 3mm;
   break-inside: avoid;
@@ -404,11 +404,10 @@ body[data-formato='especializado'] .solo-generico {
 .logo-esp {
   display: block;
   height: auto;
-  max-height: 50mm;
-  max-width: 72mm;
+  max-height: 28mm;
+  max-width: 56mm;
   width: auto;
   object-fit: contain;
-  align-self: center;
   flex-shrink: 0;
 }
 
@@ -416,7 +415,7 @@ body[data-formato='especializado'] .solo-generico {
   flex: 1;
   border: 1.5px solid #2d3748;
   border-radius: 8px;
-  padding: 3px 8px;
+  padding: 6px 14px;
   text-align: center;
   display: flex;
   flex-direction: column;

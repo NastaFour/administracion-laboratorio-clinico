@@ -57,9 +57,9 @@ export function CatalogPage() {
   const handleSaveParam = async (input: Parameters<typeof saveParam>[0]) => {
     const result = await saveParam(input)
     if (!result.ok) return { ok: false, error: result.error }
-    setShowParamForm(false)
-    setEditingParam(null)
-    return { ok: true }
+    // Do NOT close the modal here — ParamForm decides when to close based on whether
+    // a new param was created (it shows RangeEditor first) or updated (closes immediately).
+    return { ok: true, data: result.param } as const
   }
 
   const handleDeactivateParam = async () => {
