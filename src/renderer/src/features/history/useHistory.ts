@@ -13,9 +13,9 @@ export interface HistoryState {
   filters: HistoryFilters
   setFilters: (filters: HistoryFilters) => void
   refetch: () => Promise<void>
-  reprint: (ordenId: number) => Promise<{ ok: boolean; error?: string }>
-  reexport: (ordenId: number) => Promise<{ ok: boolean; error?: string }>
-  preview: (ordenId: number) => Promise<{ ok: boolean; error?: string }>
+  reprint: (ordenId: number, mostrarObservaciones?: boolean) => Promise<{ ok: boolean; error?: string }>
+  reexport: (ordenId: number, mostrarObservaciones?: boolean) => Promise<{ ok: boolean; error?: string }>
+  preview: (ordenId: number, mostrarObservaciones?: boolean) => Promise<{ ok: boolean; error?: string }>
   exportCsv: () => void
 }
 
@@ -109,24 +109,24 @@ export function useHistory(initialFilters: HistoryFilters = {}): HistoryState {
     void fetch()
   }, [fetch])
 
-  const reprint = useCallback(async (ordenId: number) => {
-    const result = await window.api.reports.print({ ordenId, copia: false })
+  const reprint = useCallback(async (ordenId: number, mostrarObservaciones = true) => {
+    const result = await window.api.reports.print({ ordenId, copia: false, mostrarObservaciones })
     if (!result.ok) {
       return { ok: false as const, error: mapError(result.error.code) }
     }
     return { ok: true as const }
   }, [])
 
-  const reexport = useCallback(async (ordenId: number) => {
-    const result = await window.api.reports.savePdf({ ordenId, copia: false })
+  const reexport = useCallback(async (ordenId: number, mostrarObservaciones = true) => {
+    const result = await window.api.reports.savePdf({ ordenId, copia: false, mostrarObservaciones })
     if (!result.ok) {
       return { ok: false as const, error: mapError(result.error.code) }
     }
     return { ok: true as const }
   }, [])
 
-  const preview = useCallback(async (ordenId: number) => {
-    const result = await window.api.reports.preview({ ordenId, copia: false })
+  const preview = useCallback(async (ordenId: number, mostrarObservaciones = true) => {
+    const result = await window.api.reports.preview({ ordenId, copia: false, mostrarObservaciones })
     if (!result.ok) {
       return { ok: false as const, error: mapError(result.error.code) }
     }

@@ -94,6 +94,8 @@ export interface ReportData {
   examenes: ReportExam[]
   bioanalista: BioanalistaConfig
   copia: boolean
+  /** Hide the observaciones block in the report (default: show). */
+  mostrarObservaciones: boolean
   generadoEn: string
   /** Selected report layout (dual-format system): 'generico' | 'especializado'. */
   formato: ReportFormat
@@ -108,6 +110,8 @@ export interface ReportData {
 export interface BuildReportOptions {
   refDate?: Date | string
   copia?: boolean
+  /** Hide the observaciones block (default: show). */
+  mostrarObservaciones?: boolean
   /**
    * Report layout override. When omitted the configured `reporte_formato`
    * default applies (config:reporte_formato, 'generico' fallback).
@@ -324,6 +328,7 @@ export function buildReportData(
     examenes,
     bioanalista,
     copia: options.copia ?? false,
+    mostrarObservaciones: options.mostrarObservaciones ?? true,
     generadoEn: new Date().toISOString(),
     formato: options.formato ?? getReportFormat(db),
     isMicrobiology: examenes.some(isMicrobiologyExam),
@@ -364,6 +369,8 @@ export interface PdfDeps {
 
 export interface PrintOptions {
   copia?: boolean
+  /** Hide the observaciones block (default: show). */
+  mostrarObservaciones?: boolean
   /**
    * Report layout override (dual-format system). When omitted the configured
    * `reporte_formato` default applies via buildReportData.
@@ -461,7 +468,7 @@ export async function previewReport(
   deps: PdfDeps = {},
   options: PrintOptions = {},
 ): Promise<void> {
-  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato })
+  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato, mostrarObservaciones: options.mostrarObservaciones })
   const win = await resolvePreviewWindow(deps, resolveReportTemplatePath(), encodeReportPayload(data))
   win.show()
 }
@@ -478,7 +485,7 @@ export async function printReportToPdf(
   deps: PdfDeps = {},
   options: PrintOptions = {},
 ): Promise<Buffer> {
-  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato })
+  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato, mostrarObservaciones: options.mostrarObservaciones })
   const win = await resolvePrintWindow(deps, resolveReportTemplatePath(), encodeReportPayload(data))
   try {
     await win.webContents.executeJavaScript(REPORT_FONT_HANDSHAKE)
@@ -513,7 +520,7 @@ export async function printReportToPrinter(
   deps: PdfDeps = {},
   options: PrintOptions = {},
 ): Promise<void> {
-  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato })
+  const data = buildReportData(db, ordenId, { copia: options.copia, formato: options.formato, mostrarObservaciones: options.mostrarObservaciones })
   const win = await resolvePrintWindow(deps, resolveReportTemplatePath(), encodeReportPayload(data))
   try {
     await win.webContents.executeJavaScript(REPORT_FONT_HANDSHAKE)

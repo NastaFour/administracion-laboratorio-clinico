@@ -87,14 +87,52 @@ const mockCatalog = {
   }),
 }
 
+const mockReports = {
+  preview: vi.fn().mockResolvedValue({ ok: true, data: 'ok' }),
+  print: vi.fn().mockResolvedValue({ ok: true, data: undefined }),
+  savePdf: vi.fn().mockResolvedValue({ ok: true, data: undefined }),
+}
+
 beforeEach(() => {
   Object.values(mockResults).forEach((m) => m.mockClear())
   Object.values(mockOrders).forEach((m) => m.mockClear())
   Object.values(mockCatalog).forEach((m) => m.mockClear())
+  Object.values(mockReports).forEach((m) => m.mockClear())
+  mockOrders.list.mockResolvedValue({
+    ok: true,
+    data: [
+      {
+        id: 10,
+        paciente_id: 1,
+        medico_id: null,
+        empresa_id: null,
+        estatus: 'Procesando',
+        observaciones: null,
+        total_bs: 500,
+        credito: false,
+        anulada: false,
+        motivo_anulacion: null,
+        cerrada: false,
+        fecha: '2026-08-19',
+        creado_en: '2026-08-19T00:00:00.000Z',
+        examenes: [
+          {
+            id: 5,
+            examen_id: 1,
+            precio: 500,
+            tercerizado: false,
+            proveedor: null,
+            comentario: null,
+          },
+        ],
+      },
+    ],
+  })
   window.api = {
     orders: mockOrders,
     catalog: mockCatalog,
     results: mockResults,
+    reports: mockReports,
   } as unknown as Window['api']
 })
 
@@ -178,5 +216,63 @@ describe('CapturePage', () => {
         expect.objectContaining({ desde: monthRange.desde, hasta: monthRange.hasta }),
       )
     })
+  })
+
+  it('shows report actions for a Completada order and downloads the PDF', async () => {
+    mockOrders.list.mockResolvedValueOnce({
+      ok: true,
+      data: [
+        {
+          id: 10,
+          paciente_id: 1,
+          medico_id: null,
+          empresa_id: null,
+          estatus: 'Completada',
+          observaciones: null,
+          total_bs: 500,
+          credito: false,
+          anulada: false,
+          motivo_anulacion: null,
+          cerrada: false,
+          fecha: '2026-08-19',
+          creado_en: '2026-08-19T00:00:00.000Z',
+          examenes: [
+            { id: 5, examen_id: 1, precio: 500, tercerizado: false, proveedor: null, comentario: null },
+          ],
+        },
+      ],
+    })
+
+    render(<CapturePage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Orden #10')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Orden #10'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('results-save-pdf')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByTestId('results-save-pdf'))
+
+    await waitFor(() => {
+      expect(mockReports.savePdf).toHaveBeenCalledWith({ ordenId: 10, copia: false })
+    })
+  })
+
+  it('hides report actions for orders that are not Completada/Entregada', async () => {
+    render(<CapturePage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Orden #10')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Orden #10'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('value-1')).toBeInTheDocument()
+    })
+
+    expect(screen.queryByTestId('results-save-pdf')).not.toBeInTheDocument()
   })
 })

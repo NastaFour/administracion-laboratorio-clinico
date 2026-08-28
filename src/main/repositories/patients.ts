@@ -277,19 +277,20 @@ export function getPatientDossier(db: Database.Database, pacienteId: number): Pa
            SELECT SUM(p.monto_bs)
            FROM pagos p
            JOIN ordenes op ON op.id = p.orden_id
-           WHERE op.paciente_id = ? AND p.anulado = 0 AND op.estatus != 'anulada'
+           WHERE op.paciente_id = ? AND p.anulado = 0 AND op.anulada = 0
          ), 0) AS pagado
        FROM ordenes o
-       WHERE o.paciente_id = ? AND o.estatus != 'anulada'`,
+       WHERE o.paciente_id = ? AND o.anulada = 0`,
     )
     .get(pacienteId, pacienteId) as { facturado: number; pagado: number }
   const facturado = balanceRow.facturado
   const pagado = balanceRow.pagado
 
-  // 3. Orders with exams
+  // 3. Orders with exams — fecha_solicitud normalized to the local business
+  // date (isoDateOnly) so the IPC response schema validates.
   const orderRows = db
     .prepare(
-      `SELECT id, fecha_solicitud, estatus, estatus_pago, precio_total,
+      `SELECT id, date(fecha_solicitud) AS fecha_solicitud, estatus, estatus_pago, precio_total,
               COALESCE(precio_total - (
                 SELECT COALESCE(SUM(p.monto_bs),0) FROM pagos p WHERE p.orden_id = ordenes.id AND p.anulado = 0
               ), precio_total) AS saldo

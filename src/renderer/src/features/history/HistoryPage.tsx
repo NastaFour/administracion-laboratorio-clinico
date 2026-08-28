@@ -44,6 +44,8 @@ export function HistoryPage() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [searching, setSearching] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  // Show/hide the observaciones block in previews, prints and PDF downloads.
+  const [showObservaciones, setShowObservaciones] = useState(true)
 
   const handlePatientSearch = async (query: string) => {
     setPatientQuery(query)
@@ -80,7 +82,7 @@ export function HistoryPage() {
 
   const handleReprint = async (ordenId: number) => {
     setActionError(null)
-    const result = await reprint(ordenId)
+    const result = await reprint(ordenId, showObservaciones)
     if (!result.ok) {
       setActionError(result.error ?? 'No se pudo reimprimir el reporte.')
     }
@@ -88,7 +90,7 @@ export function HistoryPage() {
 
   const handlePreview = async (ordenId: number) => {
     setActionError(null)
-    const result = await preview(ordenId)
+    const result = await preview(ordenId, showObservaciones)
     if (!result.ok) {
       setActionError(result.error ?? 'No se pudo abrir la vista previa.')
     }
@@ -96,7 +98,7 @@ export function HistoryPage() {
 
   const handleReexport = async (ordenId: number) => {
     setActionError(null)
-    const result = await reexport(ordenId)
+    const result = await reexport(ordenId, showObservaciones)
     if (!result.ok) {
       setActionError(result.error ?? 'No se pudo reexportar el reporte.')
     }
@@ -239,6 +241,16 @@ export function HistoryPage() {
             ))}
           </select>
         </div>
+        <label className="mb-1 flex items-center gap-2 text-xs font-medium text-ink-700">
+          <input
+            type="checkbox"
+            checked={showObservaciones}
+            onChange={(event) => setShowObservaciones(event.target.checked)}
+            data-testid="history-observaciones-toggle"
+            className="h-4 w-4 rounded border-paper-300 text-primary-600 focus:ring-primary-500"
+          />
+          Mostrar observaciones en el reporte
+        </label>
         {hasFilters && (
           <Button
             variant="secondary"

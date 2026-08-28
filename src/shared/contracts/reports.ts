@@ -8,7 +8,8 @@ export const reportActionSchema = z.enum(['preview', 'print', 'savePdf'])
 export const reportRequestSchema = z.object({
   ordenId: idSchema,
   copia: z.boolean().default(false),
-  // Dual-format system: optional per-request layout override. When omitted the
+  // Optional: hide the observaciones block in the generated report.
+  mostrarObservaciones: z.boolean().optional(),
   // configured `reporte_formato` default applies (additive field, SPEC §3.A).
   formato: reportFormatSchema.optional(),
 })

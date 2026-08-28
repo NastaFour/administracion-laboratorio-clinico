@@ -156,7 +156,7 @@ describe('HistoryPage', () => {
 
     fireEvent.click(screen.getByTestId('history-reprint-1'))
     await waitFor(() => {
-      expect(mockApi.reports.print).toHaveBeenCalledWith({ ordenId: 1, copia: false })
+      expect(mockApi.reports.print).toHaveBeenCalledWith({ ordenId: 1, copia: false, mostrarObservaciones: true })
     })
   })
 
@@ -166,7 +166,7 @@ describe('HistoryPage', () => {
 
     fireEvent.click(screen.getByTestId('history-reexport-1'))
     await waitFor(() => {
-      expect(mockApi.reports.savePdf).toHaveBeenCalledWith({ ordenId: 1, copia: false })
+      expect(mockApi.reports.savePdf).toHaveBeenCalledWith({ ordenId: 1, copia: false, mostrarObservaciones: true })
     })
   })
 
@@ -176,7 +176,7 @@ describe('HistoryPage', () => {
 
     fireEvent.click(screen.getByTestId('history-preview-1'))
     await waitFor(() => {
-      expect(mockApi.reports.preview).toHaveBeenCalledWith({ ordenId: 1, copia: false })
+      expect(mockApi.reports.preview).toHaveBeenCalledWith({ ordenId: 1, copia: false, mostrarObservaciones: true })
     })
   })
 
@@ -193,8 +193,19 @@ describe('HistoryPage', () => {
     await waitFor(() => expect(clickSpy).toHaveBeenCalled())
   })
 
-  it('syncs the manual date filters with the PeriodSelector (M4)', async () => {
+  it('sends mostrarObservaciones false when the observaciones toggle is off', async () => {
     render(<HistoryPage />)
+    await waitFor(() => expect(screen.getByTestId('history-row-1')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByTestId('history-observaciones-toggle'))
+    fireEvent.click(screen.getByTestId('history-reprint-1'))
+
+    await waitFor(() => {
+      expect(mockApi.reports.print).toHaveBeenCalledWith({ ordenId: 1, copia: false, mostrarObservaciones: false })
+    })
+  })
+
+  it('syncs the manual date filters with the PeriodSelector (M4)', async () => {    render(<HistoryPage />)
     await waitFor(() => expect(screen.getByTestId('history-row-1')).toBeInTheDocument())
 
     // Default period is the current month: Desde/Hasta inputs reflect it.

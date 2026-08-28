@@ -377,12 +377,12 @@
       if (data.orden) {
         setText('orden-id', '#' + data.orden.id)
         setText('orden-fecha', data.orden.fecha || '')
-        if (data.orden.observaciones) {
-          byId('orden-observaciones').hidden = false
-          setText('orden-observaciones-texto', data.orden.observaciones)
-          // ESPECIALIZADO observaciones box (microscopy narrative, v1 source).
-          showIf('observaciones-caja', true)
-          setText('observaciones-esp-texto', data.orden.observaciones)
+      if (data.orden.observaciones && data.mostrarObservaciones !== false) {
+        byId('orden-observaciones').hidden = false
+        setText('orden-observaciones-texto', data.orden.observaciones)
+        // ESPECIALIZADO observaciones box (microscopy narrative, v1 source).
+        showIf('observaciones-caja', true)
+        setText('observaciones-esp-texto', data.orden.observaciones)
         }
       }
 
@@ -459,7 +459,6 @@
       if (data.generadoEn) {
         var fecha = new Date(data.generadoEn)
         var texto =
-          'Generado el ' +
           ('0' + fecha.getDate()).slice(-2) +
           '/' +
           ('0' + (fecha.getMonth() + 1)).slice(-2) +

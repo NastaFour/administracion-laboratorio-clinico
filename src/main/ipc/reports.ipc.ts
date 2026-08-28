@@ -14,6 +14,8 @@ export interface ReportRequestInput {
   filePath?: string
   /** Optional per-request layout override; omitted = configured default. */
   formato?: ReportFormat
+  /** Hide the observaciones block (default: show). */
+  mostrarObservaciones?: boolean
 }
 
 /**
@@ -27,7 +29,7 @@ export async function handlePreviewReport(
   _session: Session,
   deps?: PdfDeps,
 ): Promise<string> {
-  await previewReport(db, req.ordenId, deps, { copia: req.copia, formato: req.formato })
+  await previewReport(db, req.ordenId, deps, { copia: req.copia, formato: req.formato, mostrarObservaciones: req.mostrarObservaciones })
   return 'ok'
 }
 
@@ -42,7 +44,7 @@ export async function handlePrintReport(
   session: Session,
   deps?: PdfDeps,
 ): Promise<void> {
-  await printReportToPrinter(db, req.ordenId, session, deps, { copia: req.copia, formato: req.formato })
+  await printReportToPrinter(db, req.ordenId, session, deps, { copia: req.copia, formato: req.formato, mostrarObservaciones: req.mostrarObservaciones })
 }
 
 /**
@@ -72,7 +74,7 @@ export async function handleSaveReportPdf(
     }
     filePath = result.filePath
   }
-  const pdf = await printReportToPdf(db, req.ordenId, session, deps, { copia: req.copia, formato: req.formato })
+  const pdf = await printReportToPdf(db, req.ordenId, session, deps, { copia: req.copia, formato: req.formato, mostrarObservaciones: req.mostrarObservaciones })
   await fs.promises.writeFile(filePath, pdf)
 }
 

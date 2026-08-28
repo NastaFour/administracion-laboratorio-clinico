@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Eye, Printer, FileDown } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { PeriodSelector } from '../../components/ui/PeriodSelector'
@@ -10,6 +10,7 @@ import { useOrders } from '../orders/useOrders'
 import { useParamsForCapture, useResultActions } from './useResults'
 import {
   FLAG,
+  ORDER_STATUS,
   RESULT_STATUS,
   RESULT_TYPE,
   ROLES,
@@ -79,6 +80,24 @@ export function CapturePage() {
     setSelectedOrder(order)
     const first = order.examenes.find((exam) => exam.id !== undefined)
     setSelectedExamId(first?.id ?? null)
+    setReportError(null)
+  }
+
+  // Report actions (preview / print / download) for the selected order — same
+  // triad available in Historial (M10.3), available once the order is
+  // Completada/Entregada.
+  const [reportError, setReportError] = useState<string | null>(null)
+  const canReport = selectedOrder
+    ? selectedOrder.estatus === ORDER_STATUS.COMPLETADA || selectedOrder.estatus === ORDER_STATUS.ENTREGADA
+    : false
+
+  const handleReportAction = async (action: 'preview' | 'print' | 'savePdf') => {
+    if (!selectedOrder) return
+    setReportError(null)
+    const result = await window.api.reports[action]({ ordenId: selectedOrder.id, copia: false })
+    if (!result.ok) {
+      setReportError(result.error?.message ?? 'No se pudo completar la acción.')
+    }
   }
 
   return (
@@ -146,10 +165,49 @@ export function CapturePage() {
         <div className="lg:col-span-2 space-y-4">
           {selectedOrder ? (
             <>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-ink-900">Orden #{selectedOrder.id}</h3>
-                <p className="text-sm text-ink-500">{examOptions.length} exámenes solicitados</p>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-medium text-ink-900">Orden #{selectedOrder.id}</h3>
+                  <p className="text-sm text-ink-500">{examOptions.length} exámenes solicitados</p>
+                </div>
+                {canReport && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void handleReportAction('preview')}
+                      data-testid="results-preview"
+                    >
+                      <Eye size={14} className="mr-1" />
+                      Vista previa
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void handleReportAction('print')}
+                      data-testid="results-print"
+                    >
+                      <Printer size={14} className="mr-1" />
+                      Imprimir
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void handleReportAction('savePdf')}
+                      data-testid="results-save-pdf"
+                    >
+                      <FileDown size={14} className="mr-1" />
+                      Descargar PDF
+                    </Button>
+                  </div>
+                )}
               </div>
+
+              {reportError && (
+                <div className="rounded-md bg-danger-50 text-danger-700 px-4 py-3 text-sm" role="alert" data-testid="results-report-error">
+                  {reportError}
+                </div>
+              )}
 
               {examOptions.length > 0 && (
                 <div className="flex flex-wrap gap-2">
