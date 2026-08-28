@@ -4,6 +4,7 @@ import type Database from 'better-sqlite3'
 import { getConfigValue, setConfigValue } from '../repositories/config'
 
 const LOGO_FILENAME = 'logo.jpeg'
+const SIGNATURE_FILENAME = 'signature.png'
 
 /**
  * Seed the default lab logo on first run (or whenever no logo was ever
@@ -24,3 +25,23 @@ export function ensureDefaultLogo(db: Database.Database, assetsDir: string): voi
   }
   setConfigValue(db, 'lab_logo', `data:image/jpeg;base64,${buffer.toString('base64')}`)
 }
+
+/**
+ * Seed the default bioanalyst signature/stamp on first run (or whenever no signature
+ * was configured): reads `assets/signature.png` and stores it as a base64 image data URI
+ * under `prof_firma`. A user-configured signature is never overwritten, and a missing asset
+ * file is a no-op.
+ */
+export function ensureDefaultSignature(db: Database.Database, assetsDir: string): void {
+  if (getConfigValue(db, 'prof_firma')) {
+    return
+  }
+  let buffer: Buffer
+  try {
+    buffer = fs.readFileSync(path.join(assetsDir, SIGNATURE_FILENAME))
+  } catch {
+    return
+  }
+  setConfigValue(db, 'prof_firma', `data:image/png;base64,${buffer.toString('base64')}`)
+}
+

@@ -22,7 +22,7 @@ import { registerAuditHandlers } from './ipc/audit.ipc'
 import { configureGuardDependencies } from './ipc/register'
 import { getSession, setIdleExpiryHandler, touchSession } from './services/auth'
 import { writeAudit } from './services/audit'
-import { ensureDefaultLogo } from './services/logo'
+import { ensureDefaultLogo, ensureDefaultSignature } from './services/logo'
 
 async function prepareDatabase(): Promise<void> {
   const dbPath = getDefaultDbPath()
@@ -57,10 +57,12 @@ async function bootstrap(): Promise<void> {
 
   const db = getDatabase()
 
-  // Default lab logo for PDF reports/exports: seed assets/logo.jpeg as a
-  // base64 data URI the first time no logo is configured.
+  // Default lab logo and bioanalyst signature for PDF reports/exports: seed
+  // assets/logo.jpeg and assets/signature.png as base64 data URIs the first
+  // time no logo/signature is configured.
   const assetsDir = app.isPackaged ? path.join(process.resourcesPath, 'assets') : path.resolve('assets')
   ensureDefaultLogo(db, assetsDir)
+  ensureDefaultSignature(db, assetsDir)
 
   registerAuthHandlers(db)
   registerUsersHandlers(db)
