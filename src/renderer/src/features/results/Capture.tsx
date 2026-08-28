@@ -268,6 +268,24 @@ export function CapturePage() {
   )
 }
 
+const DEFAULT_QUALITATIVE_SUGGESTIONS = [
+  'NO REACTIVO',
+  'REACTIVO',
+  'POSITIVO',
+  'NEGATIVO',
+  'ESCASAS',
+  'MODERADAS',
+  'ABUNDANTES',
+  'NORMAL',
+]
+
+const QUICK_COMMENT_SUGGESTIONS = [
+  'Muestra hemolizada',
+  'Muestra ictérica',
+  'Muestra escasa',
+  'Repetido para verificar',
+]
+
 interface ResultRowProps {
   param: ParamForCapture
   ordenExamenId: number
@@ -288,6 +306,12 @@ function ResultRow({ param, ordenExamenId, onSaved }: ResultRowProps) {
   const [pendingAction, setPendingAction] = useState<'reject' | 'reopen' | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const qualitativeOptions = useMemo(() => {
+    const custom = param.opciones_cualitativas ?? []
+    const combined = Array.from(new Set([...custom, ...DEFAULT_QUALITATIVE_SUGGESTIONS]))
+    return combined
+  }, [param.opciones_cualitativas])
 
   const canValidate = session !== null && CAN_VALIDATE.includes(session.rol)
   const isAdmin = session?.rol === ROLES.ADMIN
@@ -387,19 +411,34 @@ function ResultRow({ param, ordenExamenId, onSaved }: ResultRowProps) {
               data-testid={`value-${param.parametro_id}`}
             />
           ) : (
-            <select
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              disabled={status === RESULT_STATUS.VALIDADO}
-              className="w-full rounded-md border border-paper-300 px-3 py-2 text-ink-900 focus:border-primary-500 focus:outline-none"
-            >
-              <option value="">Seleccione…</option>
-              {(param.opciones_cualitativas ?? []).map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            <div>
+              <Input
+                list={`qualitative-list-${param.parametro_id}`}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                disabled={status === RESULT_STATUS.VALIDADO}
+                placeholder="Escriba o elija sugerencia…"
+                data-testid={`value-${param.parametro_id}`}
+              />
+              <datalist id={`qualitative-list-${param.parametro_id}`}>
+                {qualitativeOptions.map((opt) => (
+                  <option key={opt} value={opt} />
+                ))}
+              </datalist>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {qualitativeOptions.slice(0, 4).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    disabled={status === RESULT_STATUS.VALIDADO}
+                    onClick={() => setValue(opt)}
+                    className="text-2xs px-1.5 py-0.5 rounded border border-paper-200 dark:border-surface-border bg-paper-50 dark:bg-surface-hover hover:bg-primary-50 hover:text-primary-700 dark:hover:text-primary-300 text-ink-600 dark:text-ink-700 transition-colors"
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
@@ -411,9 +450,23 @@ function ResultRow({ param, ordenExamenId, onSaved }: ResultRowProps) {
             disabled={status === RESULT_STATUS.VALIDADO}
             placeholder="Comentario del examen"
           />
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {QUICK_COMMENT_SUGGESTIONS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                disabled={status === RESULT_STATUS.VALIDADO}
+                onClick={() => setComentario(c)}
+                className="text-2xs px-1.5 py-0.5 rounded border border-paper-200 dark:border-surface-border bg-paper-50 dark:bg-surface-hover hover:bg-paper-100 text-ink-600 dark:text-ink-700 transition-colors"
+                title="Insertar comentario rápido"
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="flex items-end justify-end gap-2">
+        <div className="flex items-start justify-end gap-2 pt-6">
           <Button
             size="sm"
             onClick={() => void handleCapture()}
