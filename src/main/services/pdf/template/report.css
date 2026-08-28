@@ -78,7 +78,7 @@ body {
   color: var(--ink);
   background: #ffffff;
   font-variant-numeric: tabular-nums;
-  padding: 10mm;
+  padding: 6mm 10mm;
 }
 
 /* ---------------------------------------------------------------------------
@@ -403,8 +403,8 @@ body[data-formato='especializado'] .solo-generico {
 
 .logo-esp {
   height: auto;
-  max-height: 18mm;
-  max-width: 60mm;
+  max-height: 30mm;
+  max-width: 62mm;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
