@@ -391,10 +391,10 @@ body[data-formato='especializado'] .solo-generico {
   object-fit: contain;
 }
 
-/* ESPECIALIZADO header: balanced mark + compact institutional pill box (SPEC §2.B). */
+/* ESPECIALIZADO header: balanced mark + institutional pill box (SPEC §2.B). */
 .encabezado-esp {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 4mm;
   margin-bottom: 3mm;
   break-inside: avoid;
@@ -402,11 +402,13 @@ body[data-formato='especializado'] .solo-generico {
 }
 
 .logo-esp {
+  display: block;
   height: auto;
-  max-height: 30mm;
-  max-width: 62mm;
+  max-height: 46mm;
+  max-width: 70mm;
   width: auto;
   object-fit: contain;
+  align-self: center;
   flex-shrink: 0;
 }
 
@@ -414,34 +416,37 @@ body[data-formato='especializado'] .solo-generico {
   flex: 1;
   border: 1.5px solid #2d3748;
   border-radius: 8px;
-  padding: 4px 10px;
+  padding: 6px 14px;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: auto;
+  min-height: 36mm;
 }
 
 .lab-nombre-esp {
-  margin: 0 0 1mm;
-  font-size: 11pt;
+  margin: 0 0 2mm;
+  font-size: 13pt;
   font-weight: 700;
   text-decoration: underline;
-  line-height: 1.15;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .lab-sedes-esp {
-  margin: 0.5mm 0 0;
-  font-size: 7.5pt;
+  margin: 0;
+  font-size: 9pt;
   color: #33332e;
-  line-height: 1.2;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
 .lab-dato-esp {
-  margin: 0.5mm 0 0;
-  font-size: 7.5pt;
+  margin: 1mm 0 0;
+  font-size: 8.5pt;
   color: #33332e;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 /* Pill boxes (SPEC §3.4): border 1.5px #2d3748, radius 8px. */
