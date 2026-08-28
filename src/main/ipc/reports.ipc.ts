@@ -5,6 +5,9 @@ import type Database from 'better-sqlite3'
 import { reportsChannels, ROLES, type ReportFormat, type Session } from '@/shared/contracts'
 import { handle } from './register'
 import { previewReport, printReportToPdf, printReportToPrinter, type PdfDeps } from '../services/pdf'
+import { getOrder } from '../repositories/orders'
+import { getPatient } from '../repositories/patients'
+import { getExam } from '../repositories/catalog'
 
 // Role matrix (design): print/preview/history/dashboard are available to every role.
 const REPORT_ROLES = [ROLES.ADMIN, ROLES.BIOANALISTA, ROLES.TECNICO, ROLES.RECEPCION]
@@ -17,6 +20,43 @@ export interface ReportRequestInput {
   formato?: ReportFormat
   /** Hide the observaciones block (default: show). */
   mostrarObservaciones?: boolean
+}
+
+/**
+ * Build default report file name in the format:
+ * [nombre]-[apellido]-reporte-[examen].pdf (e.g. johnny-galue-reporte-hematologia-completa.pdf)
+ */
+export function buildReportFilename(db: Database.Database, ordenId: number): string {
+  try {
+    const order = getOrder(db, ordenId)
+    if (!order) return `reporte-orden-${ordenId}.pdf`
+
+    const patient = getPatient(db, order.paciente_id)
+    const examNames = (order.examenes ?? [])
+      .map((e) => getExam(db, e.examen_id)?.nombre)
+      .filter((n): n is string => Boolean(n))
+
+    const slug = (str: string) =>
+      str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+
+    const nombre = patient?.nombre ? slug(patient.nombre) : ''
+    const apellido = patient?.apellido ? slug(patient.apellido) : ''
+    const examen = examNames.length > 0 ? examNames.slice(0, 3).map(slug).filter(Boolean).join('-') : ''
+
+    const parts = [nombre, apellido, 'reporte', examen].filter(Boolean)
+    if (parts.length > 1) {
+      return `${parts.join('-')}.pdf`
+    }
+    return `reporte-orden-${ordenId}.pdf`
+  } catch {
+    return `reporte-orden-${ordenId}.pdf`
+  }
 }
 
 /**
@@ -78,7 +118,7 @@ export async function handleSaveReportPdf(
       defaultDir = ''
     }
 
-    const defaultFilename = `reporte-orden-${req.ordenId}.pdf`
+    const defaultFilename = buildReportFilename(db, req.ordenId)
     const defaultPath = defaultDir ? path.join(defaultDir, defaultFilename) : defaultFilename
 
     const options = {

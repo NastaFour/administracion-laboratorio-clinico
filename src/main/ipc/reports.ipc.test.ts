@@ -6,7 +6,7 @@ import { createExam, createOrder as helperCreateOrder, createPatient, createTest
 import { buildGuardedHandler } from './register'
 import { reportsChannels, ERROR_CODES, RESULT_STATUS, RESULT_TYPE, type Session } from '@/shared/contracts'
 import { createResult } from '../repositories/results'
-import { handlePreviewReport, handlePrintReport, handleSaveReportPdf, registerReportsHandlers } from './reports.ipc'
+import { buildReportFilename, handlePreviewReport, handlePrintReport, handleSaveReportPdf, registerReportsHandlers } from './reports.ipc'
 import type { PdfDeps, PreviewWindowLike, ReportWindowLike } from '../services/pdf'
 
 vi.mock('electron', () => ({
@@ -141,14 +141,23 @@ describe('reports IPC (WU12 re-print / re-export)', () => {
       }
     })
 
-    it('shows the native save dialog when no filePath is given and writes the chosen path', async () => {
+    it('builds a formatted default filename [nombre]-[apellido]-reporte-[examen].pdf', () => {
+      const filename = buildReportFilename(testDb.db, ordenId)
+      expect(filename).toBe('juan-perez-reporte-examen-rep01.pdf')
+    })
+
+    it('shows the native save dialog with formatted default filename when no filePath is given and writes the chosen path', async () => {
       const { dialog } = await import('electron')
       const chosen = path.join(os.tmpdir(), `labcore-rep-dlg-${Date.now()}.pdf`)
       vi.mocked(dialog.showSaveDialog).mockResolvedValue({ canceled: false, filePath: chosen })
       const mock = makeMockWindow()
       try {
         await handleSaveReportPdf(testDb.db, { ordenId, copia: false }, makeSession('recepcion', userId), makeDeps(mock))
-        expect(dialog.showSaveDialog).toHaveBeenCalled()
+        expect(dialog.showSaveDialog).toHaveBeenCalledWith(
+          expect.objectContaining({
+            defaultPath: expect.stringMatching(/juan-perez-reporte-examen-rep01\.pdf$/),
+          }),
+        )
         expect(fs.existsSync(chosen)).toBe(true)
       } finally {
         fs.rmSync(chosen, { force: true })

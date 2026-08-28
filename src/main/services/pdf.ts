@@ -40,6 +40,8 @@ export interface ReportHeader {
 
 export interface ReportPatient {
   nombreCompleto: string
+  nombre?: string
+  apellido?: string
   cedula: string
   sexo: 'Masculino' | 'Femenino' | 'Otro'
   edad: string
@@ -306,6 +308,8 @@ export function buildReportData(
       telefono: lab.telefono,
     },
     paciente: {
+      nombre: patient.nombre,
+      apellido: patient.apellido,
       nombreCompleto: `${patient.apellido}, ${patient.nombre}`,
       cedula: patient.cedula,
       sexo: sexLabel(patient.sexo),

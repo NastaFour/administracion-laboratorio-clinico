@@ -53,7 +53,7 @@ export function useHistory(initialFilters: HistoryFilters = {}): HistoryState {
     try {
       const [ordersResult, patientsResult, examsResult] = await Promise.all([
         window.api.orders.list(filters),
-        window.api.patients.list({}),
+        window.api.patients.list({ activos: false }),
         window.api.catalog.listExams({ activos: false }),
       ])
       if (!ordersResult.ok) {

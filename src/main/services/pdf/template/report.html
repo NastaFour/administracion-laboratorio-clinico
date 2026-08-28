@@ -470,6 +470,29 @@
           fecha.getFullYear()
         setText('generado-en', texto)
       }
+
+      if (data.paciente) {
+        var slugify = function (str) {
+          return String(str || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+        }
+        var nom = slugify(data.paciente.nombre)
+        var ape = slugify(data.paciente.apellido)
+        var exNom = (data.examenes || [])
+          .map(function (e) { return slugify(e.nombre) })
+          .filter(Boolean)
+          .slice(0, 3)
+          .join('-')
+        var parts = [nom, ape, 'reporte', exNom].filter(Boolean)
+        if (parts.length > 1) {
+          document.title = parts.join('-')
+        }
+      }
     })()
   </script>
 </body>
