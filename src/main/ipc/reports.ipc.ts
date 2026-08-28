@@ -1,5 +1,6 @@
-import { BrowserWindow, dialog } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
 import fs from 'node:fs'
+import path from 'node:path'
 import type Database from 'better-sqlite3'
 import { reportsChannels, ROLES, type ReportFormat, type Session } from '@/shared/contracts'
 import { handle } from './register'
@@ -60,10 +61,29 @@ export async function handleSaveReportPdf(
 ): Promise<void> {
   let filePath = req.filePath
   if (!filePath) {
-    const parent = BrowserWindow.getFocusedWindow()
+    let parent: BrowserWindow | null = null
+    try {
+      const focused = BrowserWindow.getFocusedWindow()
+      if (focused && !focused.isDestroyed()) {
+        parent = focused
+      }
+    } catch {
+      parent = null
+    }
+
+    let defaultDir = ''
+    try {
+      defaultDir = app?.getPath('downloads') || app?.getPath('documents') || ''
+    } catch {
+      defaultDir = ''
+    }
+
+    const defaultFilename = `reporte-orden-${req.ordenId}.pdf`
+    const defaultPath = defaultDir ? path.join(defaultDir, defaultFilename) : defaultFilename
+
     const options = {
       title: 'Exportar reporte PDF',
-      defaultPath: `reporte-orden-${req.ordenId}.pdf`,
+      defaultPath,
       filters: [{ name: 'PDF', extensions: ['pdf'] }],
     }
     const result = parent
