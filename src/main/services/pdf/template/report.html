@@ -446,8 +446,11 @@
           })
           .join(' / ')
         showIf('bio-registros', registros).textContent = registros
-        if (data.bioanalista.firma && data.bioanalista.firma.indexOf('data:image/') === 0) {
+        if (data.bioanalista.firma && typeof data.bioanalista.firma === 'string' && data.bioanalista.firma.indexOf('data:image/') === 0) {
           var firma = byId('bio-firma')
+          firma.onerror = function () {
+            this.hidden = true
+          }
           firma.src = data.bioanalista.firma
           firma.hidden = false
         }
