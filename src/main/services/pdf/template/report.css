@@ -281,8 +281,8 @@ body {
 .bio-firma {
   display: block;
   margin: 2mm auto 0;
-  max-height: 14mm;
-  max-width: 50mm;
+  max-height: 26mm;
+  max-width: 70mm;
   object-fit: contain;
 }
 
@@ -404,8 +404,8 @@ body[data-formato='especializado'] .solo-generico {
 .logo-esp {
   display: block;
   height: auto;
-  max-height: 46mm;
-  max-width: 70mm;
+  max-height: 50mm;
+  max-width: 72mm;
   width: auto;
   object-fit: contain;
   align-self: center;
@@ -416,17 +416,16 @@ body[data-formato='especializado'] .solo-generico {
   flex: 1;
   border: 1.5px solid #2d3748;
   border-radius: 8px;
-  padding: 6px 14px;
+  padding: 3px 8px;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 36mm;
 }
 
 .lab-nombre-esp {
-  margin: 0 0 2mm;
-  font-size: 13pt;
+  margin: 0 0 1mm;
+  font-size: 10.5pt;
   font-weight: 700;
   text-decoration: underline;
   line-height: 1.2;
@@ -436,9 +435,9 @@ body[data-formato='especializado'] .solo-generico {
 
 .lab-sedes-esp {
   margin: 0;
-  font-size: 9pt;
+  font-size: 8pt;
   color: #33332e;
-  line-height: 1.4;
+  line-height: 1.3;
   font-weight: 500;
 }
 

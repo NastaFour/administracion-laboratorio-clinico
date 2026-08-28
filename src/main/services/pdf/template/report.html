@@ -453,6 +453,10 @@
           }
           firma.src = data.bioanalista.firma
           firma.hidden = false
+          // La firma escaneada reemplaza el bloque de texto: solo la imagen.
+          byId('bio-nombre').hidden = true
+          byId('bio-titulo').hidden = true
+          byId('bio-registros').hidden = true
         }
       }
 
